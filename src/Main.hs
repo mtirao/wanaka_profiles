@@ -1,78 +1,70 @@
 module Main where
 
-import Db as Db
-
-import Domain
-import Views
-
-import ProfilesController
-
+import Web.Scotty
+import Network.Wai.Middleware.RequestLogger (logStdoutDev, logStdout)
+import Data.Text (Text, unpack, pack)
+import Data.Text.Encoding (encodeUtf8)
+import qualified Data.Text.Lazy as TL
+import qualified Data.Text.Internal as TI
 import qualified Data.Configurator as C
 import qualified Data.Configurator.Types as C
-import qualified Data.Text.Lazy as TL
-import Data.Pool(createPool)
-import Data.Aeson
+--import Hasql.Pool (Pool, acquire, use, release)
+import qualified Hasql.Connection as S
+import Hasql.Session (Session)
+import qualified Hasql.Decoders as D
+import qualified Hasql.Encoders as E
 
-import Web.Scotty
-import Web.Scotty.Internal.Types (ActionT)
+import ProfileController
 
-import Database.PostgreSQL.Simple
+-- MIDLEWARES
 
-import Control.Monad.IO.Class
+data DbConfig = DbConfig
+    { dbName     :: String
+    , dbUser     :: String
+    , dbPassword :: String
+    , dbHost     :: String
+    , dbPort     :: Int
+    }
 
-import Network.Wai.Middleware.Static
-import Network.Wai.Middleware.RequestLogger (logStdout)
-import Network.HTTP.Types.Status
-
--- Parse file "application.conf" and get the DB connection info
 makeDbConfig :: C.Config -> IO (Maybe DbConfig)
 makeDbConfig conf = do
     dbConfname <- C.lookup conf "database.name" :: IO (Maybe String)
     dbConfUser <- C.lookup conf "database.user" :: IO (Maybe String)
     dbConfPassword <- C.lookup conf "database.password" :: IO (Maybe String)
     dbConfHost <- C.lookup conf "database.host" :: IO (Maybe String)
+    dbConfPort <- C.lookup conf "database.port" :: IO (Maybe Int)
     return $ DbConfig <$> dbConfname
-                    <*> dbConfUser
-                    <*> dbConfPassword
-                    <*> dbConfHost
+                      <*> dbConfUser
+                      <*> dbConfPassword
+                      <*> dbConfHost
+                      <*> dbConfPort
 
 
 main :: IO ()
 main = do
     loadedConf <- C.load [C.Required "application.conf"]
     dbConf <- makeDbConfig loadedConf
-    
     case dbConf of
-        Nothing -> putStrLn "No database configuration found, terminating..."
-        Just conf -> do      
-            pool <- createPool (newConn conf) close 1 40 10
-            scotty 3000 $ do
-                middleware $ staticPolicy (noDots >-> addBase "static") -- serve static files
-                middleware $ logStdout    
-
-
-                -- AUTH
-                post   "/api/smartlist/accounts/login" $ do 
-                                            b <- body
-                                            login <- return $ (decode b :: Maybe Login)
-                                            result <- liftIO $ findUserByLogin pool (TL.unpack (getUserName login))
-                                            case result of 
-                                                Nothing -> do 
-                                                            jsonResponse (ErrorMessage "User not found")
-                                                            status forbidden403
-                                                Just a -> 
-                                                            if extractPassword (userPassword a) == (getPassword login) 
-                                                            then jsonResponse a
-                                                            else do 
-                                                                    jsonResponse (ErrorMessage "Wrong password") 
-                                                                    status forbidden403
-
-   
-                -- PROFILES
-                post "/api/smartlist/profile" $ createProfile pool
-                get "/api/smartlist/profile/:id" $ do   -- Query over ProfileView, which includes Patient information
+        Nothing -> putStrLn "Error loading configuration"
+        Just conf -> do
+            let connSettings = S.settings (encodeUtf8 $ pack $ dbHost conf)
+                                        (fromIntegral $ dbPort conf)
+                                        (encodeUtf8 $ pack $ dbUser conf)
+                                        (encodeUtf8 $ pack $ dbPassword conf)
+                                        (encodeUtf8 $ pack $ dbName conf)
+            result <- S.acquire connSettings
+            case result of
+                Left err -> putStrLn $ "Error acquiring connection: " ++ show err
+                Right pool -> scotty 3002 $ do
+                    middleware logStdoutDev
+                    -- PROFILE
+                    get "/api/wanaka/profile/:id" $ do
+                                                    idd <- param "id" :: ActionM TL.Text
+                                                    getProfile (TI.pack (TL.unpack idd)) pool
+                    post "/api/wanaka/profile" $ createProfile body pool
+                    delete "/api/wanaka/profile/:id" $ do
+                                                    idd <- param "id" :: ActionM TL.Text
+                                                    deleteUserProfile (TI.pack (TL.unpack idd)) pool
+                    put "/api/wanaka/profile/:id" $ do
                                                 idd <- param "id" :: ActionM TL.Text
-                                                getProfile pool idd
-                put "/api/smartlist/profile/:id" $ do 
-                                                idd <- param "id" :: ActionM TL.Text
-                                                updateProfile pool idd
+                                                updateUserProfile (TI.pack (TL.unpack idd)) body pool
