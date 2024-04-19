@@ -29,12 +29,12 @@ version :: Version
 version = Version [0,1,0,0] []
 bindir, libdir, dynlibdir, datadir, libexecdir, sysconfdir :: FilePath
 
-bindir     = "/Users/mtirao/Development/Haskell/SmartList/profiles/.stack-work/install/x86_64-osx/cd334c114a505ffd497328b9c6657c616087b2a11d9bdbf0c6acfd95ec107992/8.10.7/bin"
-libdir     = "/Users/mtirao/Development/Haskell/SmartList/profiles/.stack-work/install/x86_64-osx/cd334c114a505ffd497328b9c6657c616087b2a11d9bdbf0c6acfd95ec107992/8.10.7/lib/x86_64-osx-ghc-8.10.7/profiles-0.1.0.0-Ayht5BoXSz97omS7uhiEKh-profiles"
-dynlibdir  = "/Users/mtirao/Development/Haskell/SmartList/profiles/.stack-work/install/x86_64-osx/cd334c114a505ffd497328b9c6657c616087b2a11d9bdbf0c6acfd95ec107992/8.10.7/lib/x86_64-osx-ghc-8.10.7"
-datadir    = "/Users/mtirao/Development/Haskell/SmartList/profiles/.stack-work/install/x86_64-osx/cd334c114a505ffd497328b9c6657c616087b2a11d9bdbf0c6acfd95ec107992/8.10.7/share/x86_64-osx-ghc-8.10.7/profiles-0.1.0.0"
-libexecdir = "/Users/mtirao/Development/Haskell/SmartList/profiles/.stack-work/install/x86_64-osx/cd334c114a505ffd497328b9c6657c616087b2a11d9bdbf0c6acfd95ec107992/8.10.7/libexec/x86_64-osx-ghc-8.10.7/profiles-0.1.0.0"
-sysconfdir = "/Users/mtirao/Development/Haskell/SmartList/profiles/.stack-work/install/x86_64-osx/cd334c114a505ffd497328b9c6657c616087b2a11d9bdbf0c6acfd95ec107992/8.10.7/etc"
+bindir     = "/Users/mtirao/Development/Haskell/profiles/.stack-work/install/x86_64-osx/cd334c114a505ffd497328b9c6657c616087b2a11d9bdbf0c6acfd95ec107992/8.10.7/bin"
+libdir     = "/Users/mtirao/Development/Haskell/profiles/.stack-work/install/x86_64-osx/cd334c114a505ffd497328b9c6657c616087b2a11d9bdbf0c6acfd95ec107992/8.10.7/lib/x86_64-osx-ghc-8.10.7/profiles-0.1.0.0-Ayht5BoXSz97omS7uhiEKh-profiles"
+dynlibdir  = "/Users/mtirao/Development/Haskell/profiles/.stack-work/install/x86_64-osx/cd334c114a505ffd497328b9c6657c616087b2a11d9bdbf0c6acfd95ec107992/8.10.7/lib/x86_64-osx-ghc-8.10.7"
+datadir    = "/Users/mtirao/Development/Haskell/profiles/.stack-work/install/x86_64-osx/cd334c114a505ffd497328b9c6657c616087b2a11d9bdbf0c6acfd95ec107992/8.10.7/share/x86_64-osx-ghc-8.10.7/profiles-0.1.0.0"
+libexecdir = "/Users/mtirao/Development/Haskell/profiles/.stack-work/install/x86_64-osx/cd334c114a505ffd497328b9c6657c616087b2a11d9bdbf0c6acfd95ec107992/8.10.7/libexec/x86_64-osx-ghc-8.10.7/profiles-0.1.0.0"
+sysconfdir = "/Users/mtirao/Development/Haskell/profiles/.stack-work/install/x86_64-osx/cd334c114a505ffd497328b9c6657c616087b2a11d9bdbf0c6acfd95ec107992/8.10.7/etc"
 
 getBinDir, getLibDir, getDynLibDir, getDataDir, getLibexecDir, getSysconfDir :: IO FilePath
 getBinDir = catchIO (getEnv "profiles_bindir") (\_ -> return bindir)

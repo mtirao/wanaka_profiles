@@ -209,15 +209,15 @@
   (major1) == 0 && (major2) == 5 && (minor) <= 3)
 #endif /* MIN_VERSION_wreq */
 
-/* tool gcc-14.0.3 */
+/* tool gcc-15.0.0 */
 #ifndef TOOL_VERSION_gcc
-#define TOOL_VERSION_gcc "14.0.3"
+#define TOOL_VERSION_gcc "15.0.0"
 #endif /* TOOL_VERSION_gcc */
 #ifndef MIN_TOOL_VERSION_gcc
 #define MIN_TOOL_VERSION_gcc(major1,major2,minor) (\
-  (major1) <  14 || \
-  (major1) == 14 && (major2) <  0 || \
-  (major1) == 14 && (major2) == 0 && (minor) <= 3)
+  (major1) <  15 || \
+  (major1) == 15 && (major2) <  0 || \
+  (major1) == 15 && (major2) == 0 && (minor) <= 0)
 #endif /* MIN_TOOL_VERSION_gcc */
 
 /* tool ghc-8.10.7 */
