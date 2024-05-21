@@ -198,6 +198,28 @@
   (major1) == 0 && (major2) == 9 && (minor) <= 1)
 #endif /* MIN_VERSION_wai_middleware_static */
 
+/* package warp-3.3.19 */
+#ifndef VERSION_warp
+#define VERSION_warp "3.3.19"
+#endif /* VERSION_warp */
+#ifndef MIN_VERSION_warp
+#define MIN_VERSION_warp(major1,major2,minor) (\
+  (major1) <  3 || \
+  (major1) == 3 && (major2) <  3 || \
+  (major1) == 3 && (major2) == 3 && (minor) <= 19)
+#endif /* MIN_VERSION_warp */
+
+/* package warp-tls-3.3.2 */
+#ifndef VERSION_warp_tls
+#define VERSION_warp_tls "3.3.2"
+#endif /* VERSION_warp_tls */
+#ifndef MIN_VERSION_warp_tls
+#define MIN_VERSION_warp_tls(major1,major2,minor) (\
+  (major1) <  3 || \
+  (major1) == 3 && (major2) <  3 || \
+  (major1) == 3 && (major2) == 3 && (minor) <= 2)
+#endif /* MIN_VERSION_warp_tls */
+
 /* package wreq-0.5.3.3 */
 #ifndef VERSION_wreq
 #define VERSION_wreq "0.5.3.3"
@@ -298,7 +320,7 @@
 #endif /* MIN_TOOL_VERSION_runghc */
 
 #ifndef CURRENT_COMPONENT_ID
-#define CURRENT_COMPONENT_ID "profiles-0.1.0.0-Ayht5BoXSz97omS7uhiEKh-profiles"
+#define CURRENT_COMPONENT_ID "profiles-0.1.0.0-JatHjAjYCU5AQapT3slCHT-profiles"
 #endif /* CURRENT_COMPONENT_ID */
 #ifndef CURRENT_PACKAGE_VERSION
 #define CURRENT_PACKAGE_VERSION "0.1.0.0"

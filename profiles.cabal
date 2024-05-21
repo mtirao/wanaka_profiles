@@ -40,6 +40,8 @@ executable profiles
                     , wreq                          >=0.5.3.2
                     , http-types
                     , time
+                    , warp-tls
+                    , warp
     other-modules: 
         Domain
         , Views
