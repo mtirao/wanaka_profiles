@@ -1,15 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE DeriveGeneric #-}
 
 module ProfilesController where
 
-import Domain
-import Views
-import Profiles
-import Db
+import Domain ( Profile (userPassword), Login, getUserName, ErrorMessage (ErrorMessage), getPassword, extractPassword )
+import Views ( jsonResponse )
+import Profiles ()
+import Db ( DbOperation(find, insert, update), findUserByLogin )
 
-import Web.Scotty
+import Web.Scotty ( body, status, ActionM )
 import Web.Scotty.Internal.Types (ActionT)
+import Web.Scotty.Trans (ScottyT, get, json)
 
 
 import Control.Monad.IO.Class
@@ -30,6 +30,7 @@ import Network.HTTP.Types.Status
 import Data.Aeson
 
 ---CREATE
+createProfile :: Pool Connection -> ActionT TL.Text IO ()
 createProfile pool = do
                         b <- body
                         profile <- return $ (decode b :: Maybe Profile)
@@ -37,16 +38,18 @@ createProfile pool = do
                             Nothing -> status status400
                             Just _ -> profileResponse pool profile
 
-profileResponse pool profile = do 
+profileResponse :: (DbOperation a, ToJSON a) => Pool Connection -> Maybe a -> ActionT TL.Text IO ()
+profileResponse pool profile = do
                                 dbProfile <- liftIO $ insert pool profile
                                 case dbProfile of
                                         Nothing -> status status400
-                                        Just a -> dbProfileResponse 
+                                        Just a -> dbProfileResponse
                                                 where dbProfileResponse  = do
                                                                         jsonResponse a
-                                                                        status status201
+                                                                        status status200
 
 ---UPDATE
+updateProfile :: Pool Connection -> TL.Text -> ActionT TL.Text IO ()
 updateProfile pool id = do
                         b <- body
                         profile <- return $ (decode b :: Maybe Profile)
@@ -58,12 +61,30 @@ updateProfileResponse pool profile id  = do
                                         dbProfile <- liftIO $  update pool profile id
                                         case dbProfile of
                                                 Nothing -> status status404
-                                                Just a -> dbProfileResponse 
+                                                Just a -> dbProfileResponse
                                                         where dbProfileResponse  = do
                                                                                 jsonResponse a
                                                                                 status status200
 
 --- GET
+getProfile :: Pool Connection -> TL.Text -> ActionT TL.Text IO ()
 getProfile pool idd = do
                         adults <- liftIO $ (find pool idd :: IO (Maybe Profile))
                         jsonResponse adults
+
+--- AUTH
+userAuthenticate :: ActionM BL.ByteString -> Pool Connection -> ActionT TL.Text IO ()
+userAuthenticate body pool =  do
+        b <- body
+        let login = (decode b :: Maybe Login)
+        result <- liftIO $ findUserByLogin pool (TL.unpack (getUserName login))
+        case result of
+                Nothing -> do
+                        jsonResponse (ErrorMessage "User not found")
+                        status forbidden403
+                Just a ->
+                        if extractPassword (userPassword a) == getPassword login
+                        then jsonResponse a
+                        else do
+                                jsonResponse (ErrorMessage "Wrong password")
+                                status forbidden403

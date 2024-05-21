@@ -1,6 +1,6 @@
 module Main where
 
-import Db as Db
+import Db
 
 import Domain
 import Views
@@ -15,14 +15,14 @@ import Data.Aeson
 
 import Web.Scotty
 import Web.Scotty.Internal.Types (ActionT)
-
 import Database.PostgreSQL.Simple
-
 import Control.Monad.IO.Class
-
 import Network.Wai.Middleware.Static
 import Network.Wai.Middleware.RequestLogger (logStdout)
 import Network.HTTP.Types.Status
+
+import Network.Wai (Request, pathInfo)
+import Network.Wai.Middleware.HttpAuth
 
 -- Parse file "application.conf" and get the DB connection info
 makeDbConfig :: C.Config -> IO (Maybe DbConfig)
@@ -36,43 +36,38 @@ makeDbConfig conf = do
                     <*> dbConfPassword
                     <*> dbConfHost
 
+authSettings :: AuthSettings
+authSettings = "My Realm" { authIsProtected = needsAuth }
+
+needsAuth :: Request -> IO Bool
+needsAuth req = return $ case pathInfo req of
+  "admin":_ -> True   -- all admin pages need authentication
+  _         -> False  -- everything else is public
+
 
 main :: IO ()
 main = do
     loadedConf <- C.load [C.Required "application.conf"]
     dbConf <- makeDbConfig loadedConf
-    
+
     case dbConf of
         Nothing -> putStrLn "No database configuration found, terminating..."
-        Just conf -> do      
+        Just conf -> do
             pool <- createPool (newConn conf) close 1 40 10
             scotty 3000 $ do
                 middleware $ staticPolicy (noDots >-> addBase "static") -- serve static files
-                middleware $ logStdout    
-
-
+                middleware logStdout
+                middleware $ basicAuth (\u p -> return $ u == "username" && p == "password") authSettings
+                get "/admin/deletedb" $ do
+                    html "<h1>Password database erased!</h1>"
                 -- AUTH
-                post   "/api/smartlist/accounts/login" $ do 
-                                            b <- body
-                                            login <- return $ (decode b :: Maybe Login)
-                                            result <- liftIO $ findUserByLogin pool (TL.unpack (getUserName login))
-                                            case result of 
-                                                Nothing -> do 
-                                                            jsonResponse (ErrorMessage "User not found")
-                                                            status forbidden403
-                                                Just a -> 
-                                                            if extractPassword (userPassword a) == (getPassword login) 
-                                                            then jsonResponse a
-                                                            else do 
-                                                                    jsonResponse (ErrorMessage "Wrong password") 
-                                                                    status forbidden403
+                post   "/api/smartlist/accounts/login" $ userAuthenticate body pool
 
-   
                 -- PROFILES
                 post "/api/smartlist/profile" $ createProfile pool
                 get "/api/smartlist/profile/:id" $ do   -- Query over ProfileView, which includes Patient information
                                                 idd <- param "id" :: ActionM TL.Text
                                                 getProfile pool idd
-                put "/api/smartlist/profile/:id" $ do 
+                put "/api/smartlist/profile/:id" $ do
                                                 idd <- param "id" :: ActionM TL.Text
                                                 updateProfile pool idd
