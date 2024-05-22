@@ -15,7 +15,7 @@ import Data.Aeson
 
 import Network.Wai.Handler.WarpTLS (runTLS, tlsSettings)
 import Network.Wai.Handler.Warp (defaultSettings, setPort)
-import Network.Wai.Middleware.RequestLogger (logStdoutDev, logStdou)
+import Network.Wai.Middleware.RequestLogger (logStdoutDev, logStdout)
 import Web.Scotty
 import Web.Scotty.Internal.Types (ActionT)
 import Database.PostgreSQL.Simple
@@ -61,17 +61,15 @@ main = do
                 middleware $ staticPolicy (noDots >-> addBase "static") -- serve static files
                 middleware logStdout
                 middleware $ basicAuth (\u p -> return $ u == "username" && p == "password") authSettings
-                get "/admin/deletedb" $ do
-                    html "<h1>Password database erased!</h1>"
                 -- AUTH
                 post   "/api/smartlist/accounts/login" $ userAuthenticate body pool
 
                 -- PROFILES
-                post "/api/smartlist/profile" $ createProfile pool
-                get "/api/smartlist/profile/:id" $ do   -- Query over ProfileView, which includes Patient information
+                post "/admin/api/smartlist/profile" $ createProfile pool
+                get "/admin//api/smartlist/profile/:id" $ do   -- Query over ProfileView, which includes Patient information
                                                 idd <- param "id" :: ActionM TL.Text
                                                 getProfile pool idd
-                put "/api/smartlist/profile/:id" $ do
+                put "/admin//api/smartlist/profile/:id" $ do
                                                 idd <- param "id" :: ActionM TL.Text
                                                 updateProfile pool idd
             runTLS tlsConfig config (logStdoutDev waiApp)

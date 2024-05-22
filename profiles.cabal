@@ -42,6 +42,7 @@ executable profiles
                     , time
                     , warp-tls
                     , warp
+                    , jose-jwt
     other-modules: 
         Domain
         , Views
