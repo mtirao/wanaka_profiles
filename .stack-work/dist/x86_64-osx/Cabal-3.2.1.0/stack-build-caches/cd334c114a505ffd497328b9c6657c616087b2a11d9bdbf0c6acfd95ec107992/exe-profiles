@@ -1,16 +1,16 @@
 /Users/mtirao/Development/Haskell/profiles/README.md:
   hash: c8794fdb95db0907d2288f481d9842cca2ad7da1ca1579141ba0f904810eab5e
 /Users/mtirao/Development/Haskell/profiles/profiles.cabal:
-  hash: 4240f73970b4f3bf82744d027694b72dcfad5c79809fd2c3e52a87e6cf5b7f16
+  hash: a8173391da9c48a4cff099c2d4fef42b65992ce668caec915b612726aaaa956d
 /Users/mtirao/Development/Haskell/profiles/src/Domain.hs:
   hash: 0fc9163a24176023a1d9a27ac6cefdf96f84f78ef70fcb65bce1037eafad9f50
 /Users/mtirao/Development/Haskell/profiles/src/Main.hs:
-  hash: e97f334c3708bc2c57d2629f4f1593277f6d2f11ca56497f9f0a8d93bad3096c
+  hash: 973f9706991d2a667ce322e95fd821c51dda2d15fd3a7aa79e3c63bcec247510
 /Users/mtirao/Development/Haskell/profiles/src/Views.hs:
   hash: 39ba511afda8c15073c945e1d4f89b896ae5d0c5fa1aa492b3e532d2e7e45e33
 /Users/mtirao/Development/Haskell/profiles/src/controller/ProfilesController.hs:
-  hash: 663dde419c189540bc365b91dc5e1fd66ed293697bc2a0ada70eb5d9a42fe26e
+  hash: b5aca7e3f1cdd24409db60e18484f18e5e084e3b86217cabadbd3d507e72e7e9
 /Users/mtirao/Development/Haskell/profiles/src/db/Db.hs:
-  hash: 48ec0138f14a48e4b780f8189e9b68a97670beadc13f041b7b30005227884f32
+  hash: 5996dd68627c59736343e5e66753d60d0441dbe4e69ae1c378b1520f0f043c4c
 /Users/mtirao/Development/Haskell/profiles/src/db/Profiles.hs:
   hash: 6d503a41245b9255e9e5d70b05a6f46490108e36dc961c399185ac1093ce01e6

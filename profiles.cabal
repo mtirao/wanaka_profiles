@@ -22,12 +22,12 @@ executable profiles
     ghc-options:    -threaded -O2 -rtsopts -with-rtsopts=-N
     default-extensions:     OverloadedStrings
     default-language: Haskell2010
-    build-depends:  base                          >=4.17
+    build-depends:  base                            >= 4.14.3.0
                     , scotty                        >= 0.9.1
                     , bytestring                    >= 0.9        && < 0.11
                     , text                          >= 0.11       && < 2.0
                     , postgresql-simple             >= 0.4.10.0
-                    , aeson                         >= 0.6        && < 0.9
+                    , aeson                         >= 1.5.6.0
                     , transformers                  >= 0.4.3.0
                     , wai                           >= 3.0.2.3
                     , wai-middleware-static         >= 0.7.0.1
@@ -42,7 +42,7 @@ executable profiles
                     , time
                     , warp-tls
                     , warp
-                    , jose-jwt
+                    , bytestring-conversion
     other-modules: 
         Domain
         , Views

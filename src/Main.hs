@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-deferred-out-of-scope-variables #-}
 module Main where
 
 import Db
@@ -10,6 +11,11 @@ import ProfilesController
 import qualified Data.Configurator as C
 import qualified Data.Configurator.Types as C
 import qualified Data.Text.Lazy as TL
+import Data.ByteString.Conversion.To
+
+import Data.ByteString.Internal
+import Data.ByteString.Lazy.Internal
+
 import Data.Pool(createPool)
 import Data.Aeson
 
@@ -25,6 +31,7 @@ import Network.HTTP.Types.Status
 
 import Network.Wai (Request, pathInfo)
 import Network.Wai.Middleware.HttpAuth
+import Data.ByteString.Lazy (fromStrict)
 
 -- Parse file "application.conf" and get the DB connection info
 makeDbConfig :: C.Config -> IO (Maybe DbConfig)
@@ -46,7 +53,6 @@ needsAuth req = return $ case pathInfo req of
   "admin":_ -> True   -- all admin pages need authentication
   _         -> False  -- everything else is public
 
-
 main :: IO ()
 main = do
     loadedConf <- C.load [C.Required "application.conf"]
@@ -60,7 +66,7 @@ main = do
             waiApp <- scottyApp $ do
                 middleware $ staticPolicy (noDots >-> addBase "static") -- serve static files
                 middleware logStdout
-                middleware $ basicAuth (\u p -> return $ u == "username" && p == "password") authSettings
+                middleware $ basicAuth (\u p -> validatePassword pool (fromStrict u) (fromStrict p)) authSettings
                 -- AUTH
                 post   "/api/smartlist/accounts/login" $ userAuthenticate body pool
 

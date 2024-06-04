@@ -55,6 +55,17 @@
   (major1) == 0 && (major2) == 10 && (minor) <= 12)
 #endif /* MIN_VERSION_bytestring */
 
+/* package bytestring-conversion-0.3.1 */
+#ifndef VERSION_bytestring_conversion
+#define VERSION_bytestring_conversion "0.3.1"
+#endif /* VERSION_bytestring_conversion */
+#ifndef MIN_VERSION_bytestring_conversion
+#define MIN_VERSION_bytestring_conversion(major1,major2,minor) (\
+  (major1) <  0 || \
+  (major1) == 0 && (major2) <  3 || \
+  (major1) == 0 && (major2) == 3 && (minor) <= 1)
+#endif /* MIN_VERSION_bytestring_conversion */
+
 /* package configurator-0.3.0.0 */
 #ifndef VERSION_configurator
 #define VERSION_configurator "0.3.0.0"
@@ -76,17 +87,6 @@
   (major1) == 0 && (major2) <  12 || \
   (major1) == 0 && (major2) == 12 && (minor) <= 3)
 #endif /* MIN_VERSION_http_types */
-
-/* package jose-jwt-0.9.3 */
-#ifndef VERSION_jose_jwt
-#define VERSION_jose_jwt "0.9.3"
-#endif /* VERSION_jose_jwt */
-#ifndef MIN_VERSION_jose_jwt
-#define MIN_VERSION_jose_jwt(major1,major2,minor) (\
-  (major1) <  0 || \
-  (major1) == 0 && (major2) <  9 || \
-  (major1) == 0 && (major2) == 9 && (minor) <= 3)
-#endif /* MIN_VERSION_jose_jwt */
 
 /* package lens-4.19.2 */
 #ifndef VERSION_lens
@@ -331,7 +331,7 @@
 #endif /* MIN_TOOL_VERSION_runghc */
 
 #ifndef CURRENT_COMPONENT_ID
-#define CURRENT_COMPONENT_ID "profiles-0.1.0.0-F7D9zBAO96OJ4kUtAixODn-profiles"
+#define CURRENT_COMPONENT_ID "profiles-0.1.0.0-65aoVXuNUCFB8UfgAQoVOS-profiles"
 #endif /* CURRENT_COMPONENT_ID */
 #ifndef CURRENT_PACKAGE_VERSION
 #define CURRENT_PACKAGE_VERSION "0.1.0.0"
