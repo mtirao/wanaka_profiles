@@ -63,19 +63,27 @@ main = do
         Nothing -> putStrLn "No database configuration found, terminating..."
         Just conf -> do
             pool <- createPool (newConn conf) close 1 40 10
-            waiApp <- scottyApp $ do
+            scotty 3000 $ do 
                 middleware $ staticPolicy (noDots >-> addBase "static") -- serve static files
                 middleware logStdout
                 middleware $ basicAuth (\u p -> validatePassword pool (fromStrict u) (fromStrict p)) authSettings
                 -- AUTH
                 post   "/api/smartlist/accounts/login" $ userAuthenticate body pool
 
-                -- PROFILES
-                post "/admin/api/smartlist/profile" $ createProfile pool
-                get "/admin//api/smartlist/profile/:id" $ do   -- Query over ProfileView, which includes Patient information
+                -- PROFILES AUTH
+                post "/admin/smartlist/profile" $ createProfile pool
+                get "/admin/smartlist/profile/:id" $ do   -- Query over ProfileView, which includes Patient information
                                                 idd <- param "id" :: ActionM TL.Text
                                                 getProfile pool idd
-                put "/admin//api/smartlist/profile/:id" $ do
+                put "/admin/smartlist/profile/:id" $ do
                                                 idd <- param "id" :: ActionM TL.Text
                                                 updateProfile pool idd
-            runTLS tlsConfig config (logStdoutDev waiApp)
+                
+                -- PROFILES API
+                post "/api/smartlist/profile" $ createProfile pool
+                get "/api/smartlist/profile/:id" $ do   -- Query over ProfileView, which includes Patient information
+                                                idd <- param "id" :: ActionM TL.Text
+                                                getProfile pool idd
+                put "/api/smartlist/profile/:id" $ do
+                                                idd <- param "id" :: ActionM TL.Text
+                                                updateProfile pool idd
