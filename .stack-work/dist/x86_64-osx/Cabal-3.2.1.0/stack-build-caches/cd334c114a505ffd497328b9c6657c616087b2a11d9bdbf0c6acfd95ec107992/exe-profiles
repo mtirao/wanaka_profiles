@@ -1,16 +1,16 @@
-/Users/mtirao/Development/Haskell/profiles/README.md:
+/Users/mtirao/Development/haskell/wanaka_profiles/README.md:
   hash: c8794fdb95db0907d2288f481d9842cca2ad7da1ca1579141ba0f904810eab5e
-/Users/mtirao/Development/Haskell/profiles/profiles.cabal:
+/Users/mtirao/Development/haskell/wanaka_profiles/profiles.cabal:
   hash: a8173391da9c48a4cff099c2d4fef42b65992ce668caec915b612726aaaa956d
-/Users/mtirao/Development/Haskell/profiles/src/Domain.hs:
-  hash: 0fc9163a24176023a1d9a27ac6cefdf96f84f78ef70fcb65bce1037eafad9f50
-/Users/mtirao/Development/Haskell/profiles/src/Main.hs:
+/Users/mtirao/Development/haskell/wanaka_profiles/src/Domain.hs:
+  hash: a05afdf349011179894e2ba81372d3c60cef7964c35da2f12e22740a94fd6b27
+/Users/mtirao/Development/haskell/wanaka_profiles/src/Main.hs:
   hash: a9724877f08457ded4c8bc6b4abe9104a5efb8ab358b378f0952561f65bbbea3
-/Users/mtirao/Development/Haskell/profiles/src/Views.hs:
+/Users/mtirao/Development/haskell/wanaka_profiles/src/Views.hs:
   hash: 39ba511afda8c15073c945e1d4f89b896ae5d0c5fa1aa492b3e532d2e7e45e33
-/Users/mtirao/Development/Haskell/profiles/src/controller/ProfilesController.hs:
+/Users/mtirao/Development/haskell/wanaka_profiles/src/controller/ProfilesController.hs:
   hash: b5aca7e3f1cdd24409db60e18484f18e5e084e3b86217cabadbd3d507e72e7e9
-/Users/mtirao/Development/Haskell/profiles/src/db/Db.hs:
-  hash: 5996dd68627c59736343e5e66753d60d0441dbe4e69ae1c378b1520f0f043c4c
-/Users/mtirao/Development/Haskell/profiles/src/db/Profiles.hs:
-  hash: 6d503a41245b9255e9e5d70b05a6f46490108e36dc961c399185ac1093ce01e6
+/Users/mtirao/Development/haskell/wanaka_profiles/src/db/Db.hs:
+  hash: 3289146017819ada891002f168f572df53b6be3568ab2b12e8bba3bdf0776b8e
+/Users/mtirao/Development/haskell/wanaka_profiles/src/db/Profiles.hs:
+  hash: a0819c9df96b53a9d32ae67c596b1b6fd5a81a3e50ffa28e01486dd31da58167

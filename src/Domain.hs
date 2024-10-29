@@ -6,6 +6,21 @@
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE RecordWildCards       #-}
 {-# OPTIONS_GHC -Wno-incomplete-patterns #-}
+{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE InstanceSigs #-}
 
 
 module Domain where
@@ -60,6 +75,7 @@ data Profile = Profile
     , gender :: Text
     , address :: Text
     , city :: Text
+    , userId :: Text
     } deriving (Show)
 
 instance ToJSON Profile where
@@ -74,7 +90,8 @@ instance ToJSON Profile where
             "profileid" .= profileId,
             "gender" .= gender,
             "address" .= address,
-            "city" .= city
+            "city" .= city,
+            "userid" .= userId
         ]
 
 instance FromJSON Profile where
@@ -90,7 +107,8 @@ instance FromJSON Profile where
         v .:?  "profileid" <*>
         v .: "gender" <*>
         v .: "address" <*>
-        v .: "city"
+        v .: "city" <*>
+        v .: "userid"
 
 
 

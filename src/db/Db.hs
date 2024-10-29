@@ -82,9 +82,9 @@ execSqlT pool args sql = withResource pool ins
 
 findUserByLogin :: Pool Connection -> String -> IO (Maybe Profile)
 findUserByLogin pool login = do
-          res <- liftIO $ fetch pool (Only login) "SELECT cell_phone, email, first_name, last_name, phone, user_name, user_password, user_role, id, gender, address, city FROM profiles WHERE user_name=?" :: IO [(TL.Text, TL.Text,TL.Text,TL.Text,TL.Text, Maybe TL.Text, Maybe TL.Text, Maybe TL.Text, Maybe Integer, TL.Text, TL.Text, TL.Text)]
+          res <- liftIO $ fetch pool (Only login) "SELECT cell_phone, email, first_name, last_name, phone, user_name, user_password, user_role, id, gender, address, city, user_id FROM profiles WHERE user_name=?" :: IO [(TL.Text, TL.Text,TL.Text,TL.Text,TL.Text, Maybe TL.Text, Maybe TL.Text, Maybe TL.Text, Maybe Integer, TL.Text, TL.Text, TL.Text, TL.Text)]
           return $ oneProfile res
-            where oneProfile ((cellPhone, email, firstName, lastName, phone, userName, userPassword, userRole, id, gender, address, city) : _) = Just $ Profile cellPhone email firstName lastName phone userName userPassword userRole id gender address city
+            where oneProfile ((cellPhone, email, firstName, lastName, phone, userName, userPassword, userRole, id, gender, address, city, userId) : _) = Just $ Profile cellPhone email firstName lastName phone userName userPassword userRole id gender address city userId
                   oneProfile _ = Nothing
 
 
