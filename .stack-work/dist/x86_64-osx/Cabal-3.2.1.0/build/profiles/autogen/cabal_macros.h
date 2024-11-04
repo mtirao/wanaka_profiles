@@ -88,6 +88,17 @@
   (major1) == 0 && (major2) == 12 && (minor) <= 3)
 #endif /* MIN_VERSION_http_types */
 
+/* package jose-jwt-0.9.3 */
+#ifndef VERSION_jose_jwt
+#define VERSION_jose_jwt "0.9.3"
+#endif /* VERSION_jose_jwt */
+#ifndef MIN_VERSION_jose_jwt
+#define MIN_VERSION_jose_jwt(major1,major2,minor) (\
+  (major1) <  0 || \
+  (major1) == 0 && (major2) <  9 || \
+  (major1) == 0 && (major2) == 9 && (minor) <= 3)
+#endif /* MIN_VERSION_jose_jwt */
+
 /* package lens-4.19.2 */
 #ifndef VERSION_lens
 #define VERSION_lens "4.19.2"
@@ -331,7 +342,7 @@
 #endif /* MIN_TOOL_VERSION_runghc */
 
 #ifndef CURRENT_COMPONENT_ID
-#define CURRENT_COMPONENT_ID "profiles-0.1.0.0-65aoVXuNUCFB8UfgAQoVOS-profiles"
+#define CURRENT_COMPONENT_ID "profiles-0.1.0.0-AJUoWsqyKp8L5idTFjHtox-profiles"
 #endif /* CURRENT_COMPONENT_ID */
 #ifndef CURRENT_PACKAGE_VERSION
 #define CURRENT_PACKAGE_VERSION "0.1.0.0"

@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE TemplateHaskell       #-}
@@ -6,20 +5,6 @@
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE RecordWildCards       #-}
 {-# OPTIONS_GHC -Wno-incomplete-patterns #-}
-{-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE InstanceSigs #-}
 
 
@@ -31,6 +16,39 @@ import Data.Aeson
 import Control.Applicative
 import GHC.Generics
 import Data.Time.LocalTime
+import GHC.RTS.Flags (MiscFlags(installSEHHandlers))
+import qualified Data.Maybe
+import qualified Data.ByteString.Lazy.Internal as BI
+
+-- Authentication
+data LoginResponse = LoginResponse
+    { accessToken :: Text
+    , tokenType :: Text
+    , expiresIn :: Integer
+    , refreshToken :: Text
+    } deriving (Show)
+
+instance ToJSON LoginResponse where
+    toJSON (LoginResponse accessToken tokenType expiresIn refreshToken) = object
+        [
+            "accesstoken" .= accessToken,
+            "tokentype" .= tokenType,
+            "expiresin" .= expiresIn,
+            "refreshtoken" .= refreshToken
+        ]                           
+
+data Token = Token
+    {
+        user :: Text,
+        exp :: Integer
+    } deriving (Show)
+
+instance ToJSON Token where
+    toJSON (Token user exp) = object
+        [
+            "user" .= user,
+            "exp" .= exp
+        ]                           
 
 
 -- Login
@@ -116,7 +134,7 @@ instance FromJSON Profile where
 getUserName :: Maybe Login -> Text
 getUserName a = case a of
                 Nothing -> ""
-                Just (Login u p) -> u   
+                Just (Login u p) -> u
 
 getPassword :: Maybe Login -> Text
 getPassword a = case a of
@@ -124,6 +142,8 @@ getPassword a = case a of
                 Just (Login u p) -> p
 
 extractPassword :: Maybe Text -> Text
-extractPassword a = case a of
-                    Nothing -> ""
-                    Just p -> p
+extractPassword = Data.Maybe.fromMaybe ""
+
+
+convertToString :: Text -> [Char]
+convertToString u = BI.unpackChars (encode $ Token u 36000)

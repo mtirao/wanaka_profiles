@@ -43,6 +43,7 @@ executable profiles
                     , warp-tls
                     , warp
                     , bytestring-conversion
+                    , jose-jwt
     other-modules: 
         Domain
         , Views

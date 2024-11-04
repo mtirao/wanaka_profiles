@@ -1,8 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
-
 module ProfilesController where
 
-import Domain ( Profile (userPassword), Login, getUserName, ErrorMessage (ErrorMessage), getPassword, extractPassword )
+import Domain ( Profile (userPassword, userId), Login, getUserName, ErrorMessage (ErrorMessage), getPassword, extractPassword, convertToString, LoginResponse(LoginResponse), Token(Token))
 import Views ( jsonResponse )
 import Profiles ()
 import Db ( DbOperation(find, insert, update), findUserByLogin )
@@ -17,8 +16,9 @@ import Database.PostgreSQL.Simple
 import Data.Pool(Pool, createPool, withResource)
 import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.Encoding as TL
-import qualified Data.ByteString.Lazy.Char8 as BL
+import qualified Data.ByteString.Lazy.Char8 as BL 
 import qualified Data.Text as T
+import qualified Data.ByteString.Internal as BI
 
 import GHC.Int
 import GHC.Generics (Generic)
@@ -28,6 +28,10 @@ import Network.Wai.Middleware.RequestLogger (logStdout)
 import Network.HTTP.Types.Status
 
 import Data.Aeson
+
+import Jose.Jws
+import Jose.Jwa
+import Jose.Jwt (Jwt(Jwt))
 
 ---CREATE
 createProfile :: Pool Connection -> ActionT TL.Text IO ()
@@ -84,9 +88,14 @@ userAuthenticate body pool =  do
                         status forbidden403
                 Just a ->
                         if extractPassword (userPassword a) == getPassword login
-                        then jsonResponse a
+                        then jsonResponse (LoginResponse (createToken $ userId a) "JWT" 3600 "refreshToken" )
                         else do
                                 jsonResponse (ErrorMessage "Wrong password")
                                 status forbidden403
 
-                              
+
+
+
+createToken u = case hmacEncode HS256 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" (BI.packChars $ convertToString u) of
+                Left _ -> ""
+                Right (Jwt jwt) -> TL.pack $ BI.unpackChars jwt
