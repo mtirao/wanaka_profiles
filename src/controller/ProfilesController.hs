@@ -92,7 +92,7 @@ userAuthenticate body pool =  do
                         status forbidden403
                 Just a ->
                         if extractPassword (userPassword a) == getPassword login
-                        then jsonResponse (LoginResponse (createToken (userId a) expDate) "JWT" expDate "refreshToken" )
+                        then jsonResponse (LoginResponse (createToken (userId a) expDate) "JWT" "refreshToken" )
                         else do
                                 jsonResponse (ErrorMessage "Wrong password")
                                 status forbidden403

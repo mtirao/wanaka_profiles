@@ -36,12 +36,12 @@ instance DbOperation Profile where
                   oneAgent _ = Nothing
 
     find  pool id = do 
-                        res <- fetch pool (Only id) "SELECT cell_phone, email, first_name, last_name, phone, user_name, user_password, user_role, id, gender, address, city, userId FROM profiles WHERE id=?" :: IO [(TL.Text, TL.Text,TL.Text,TL.Text,TL.Text, Maybe TL.Text, Maybe TL.Text, Maybe TL.Text, Maybe Integer, TL.Text, TL.Text, TL.Text, TL.Text)]
+                        res <- fetch pool (Only id) "SELECT cell_phone, email, first_name, last_name, phone, user_name, user_password, user_role, id, gender, address, city, user_id FROM profiles WHERE user_id=?" :: IO [(TL.Text, TL.Text,TL.Text,TL.Text,TL.Text, Maybe TL.Text, Maybe TL.Text, Maybe TL.Text, Maybe Integer, TL.Text, TL.Text, TL.Text, TL.Text)]
                         return $ oneAgent res
                            where oneAgent ((cellPhone, email, firstName, lastName, phone, userName, userPassword, userRole, id, gender, address, city, userId) : _) = Just $ Profile cellPhone email firstName lastName phone userName userPassword userRole id gender address city userId
                                  oneAgent _ = Nothing
     
     list  pool = do
-                    res <- fetchSimple pool "SELECT cell_phone, email, first_name, last_name, phone, user_name, user_password, user_role, id, gender, address, city, userId FROM profiles" :: IO [(TL.Text, TL.Text,TL.Text,TL.Text,TL.Text, Maybe TL.Text, Maybe TL.Text, Maybe TL.Text, Maybe Integer, TL.Text, TL.Text, TL.Text, TL.Text)]
+                    res <- fetchSimple pool "SELECT cell_phone, email, first_name, last_name, phone, user_name, user_password, user_role, id, gender, address, city, user_id FROM profiles" :: IO [(TL.Text, TL.Text,TL.Text,TL.Text,TL.Text, Maybe TL.Text, Maybe TL.Text, Maybe TL.Text, Maybe Integer, TL.Text, TL.Text, TL.Text, TL.Text)]
                     return $ map (\(cellPhone, email, firstName, lastName, phone, userName, userPassword, userRole, id, gender, address, city, userId) -> Profile cellPhone email firstName lastName phone userName userPassword userRole id gender address city userId) res
 

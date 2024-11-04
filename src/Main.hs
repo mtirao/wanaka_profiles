@@ -67,22 +67,22 @@ main = do
                 middleware logStdout
                 middleware $ basicAuth (\u p -> validatePassword pool (fromStrict u) (fromStrict p)) authSettings
                 -- AUTH
-                post   "/api/smartlist/accounts/login" $ userAuthenticate body pool
+                post   "/api/wanaka/accounts/login" $ userAuthenticate body pool
 
                 -- PROFILES AUTH
-                post "/admin/smartlist/profile" $ createProfile pool
-                get "/admin/smartlist/profile/:id" $ do   -- Query over ProfileView, which includes Patient information
+                post "/admin/wanaka/profile" $ createProfile pool
+                get "/admin/wanaka/profile/:id" $ do   -- Query over ProfileView, which includes Patient information
                                                 idd <- param "id" :: ActionM TL.Text
                                                 getProfile pool idd
-                put "/admin/smartlist/profile/:id" $ do
+                put "/admin/wanaka/profile/:id" $ do
                                                 idd <- param "id" :: ActionM TL.Text
                                                 updateProfile pool idd
                 
                 -- PROFILES API
-                post "/api/smartlist/profile" $ createProfile pool
-                get "/api/smartlist/profile/:id" $ do   -- Query over ProfileView, which includes Patient information
+                post "/api/wanaka/profile" $ createProfile pool
+                get "/api/wanaka/profile/:id" $ do   -- Query over ProfileView, which includes Patient information
                                                 idd <- param "id" :: ActionM TL.Text
                                                 getProfile pool idd
-                put "/api/smartlist/profile/:id" $ do
+                put "/api/wanaka/profile/:id" $ do
                                                 idd <- param "id" :: ActionM TL.Text
                                                 updateProfile pool idd

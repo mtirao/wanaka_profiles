@@ -27,16 +27,14 @@ import qualified Data.ByteString.Lazy.Internal as BI
 data LoginResponse = LoginResponse
     { accessToken :: Text
     , tokenType :: Text
-    , expiresIn :: Int64
     , refreshToken :: Text
     } deriving (Show)
 
 instance ToJSON LoginResponse where
-    toJSON (LoginResponse accessToken tokenType expiresIn refreshToken) = object
+    toJSON (LoginResponse accessToken tokenType refreshToken) = object
         [
             "accesstoken" .= accessToken,
             "tokentype" .= tokenType,
-            "expiresin" .= expiresIn,
             "refreshtoken" .= refreshToken
         ]                           
 
