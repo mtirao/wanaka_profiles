@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module ProfilesController where
 
-import Domain ( Profile (userPassword, userId), Login, getUserName, ErrorMessage (ErrorMessage), getPassword, extractPassword, convertToString, LoginResponse(LoginResponse), Token(Token))
+import Domain ( Profile (userPassword, userId), Login, getUserName, ErrorMessage (ErrorMessage), getPassword, extractPassword, convertToString, tokenExpiration, LoginResponse(LoginResponse), Token(Token))
 import Views ( jsonResponse )
 import Profiles ()
 import Db ( DbOperation(find, insert, update), findUserByLogin )
@@ -9,7 +9,6 @@ import Db ( DbOperation(find, insert, update), findUserByLogin )
 import Web.Scotty ( body, status, ActionM )
 import Web.Scotty.Internal.Types (ActionT)
 import Web.Scotty.Trans (ScottyT, get, json)
-
 
 import Control.Monad.IO.Class
 import Database.PostgreSQL.Simple
@@ -19,6 +18,8 @@ import qualified Data.Text.Lazy.Encoding as TL
 import qualified Data.ByteString.Lazy.Char8 as BL 
 import qualified Data.Text as T
 import qualified Data.ByteString.Internal as BI
+import Data.Time
+import Data.Time.Clock.POSIX
 
 import GHC.Int
 import GHC.Generics (Generic)
@@ -32,6 +33,7 @@ import Data.Aeson
 import Jose.Jws
 import Jose.Jwa
 import Jose.Jwt (Jwt(Jwt))
+
 
 ---CREATE
 createProfile :: Pool Connection -> ActionT TL.Text IO ()
@@ -81,6 +83,8 @@ userAuthenticate :: ActionM BL.ByteString -> Pool Connection -> ActionT TL.Text 
 userAuthenticate body pool =  do
         b <- body
         let login = (decode b :: Maybe Login)
+        curTime <- liftIO getPOSIXTime
+        let expDate = tokenExpiration curTime
         result <- liftIO $ findUserByLogin pool (TL.unpack (getUserName login))
         case result of
                 Nothing -> do
@@ -88,14 +92,12 @@ userAuthenticate body pool =  do
                         status forbidden403
                 Just a ->
                         if extractPassword (userPassword a) == getPassword login
-                        then jsonResponse (LoginResponse (createToken $ userId a) "JWT" 3600 "refreshToken" )
+                        then jsonResponse (LoginResponse (createToken (userId a) expDate) "JWT" expDate "refreshToken" )
                         else do
                                 jsonResponse (ErrorMessage "Wrong password")
                                 status forbidden403
 
 
-
-
-createToken u = case hmacEncode HS256 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" (BI.packChars $ convertToString u) of
+createToken u  t = case hmacEncode HS256 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" (BI.packChars $ convertToString u t) of
                 Left _ -> ""
                 Right (Jwt jwt) -> TL.pack $ BI.unpackChars jwt

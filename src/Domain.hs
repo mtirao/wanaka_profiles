@@ -16,6 +16,9 @@ import Data.Aeson
 import Control.Applicative
 import GHC.Generics
 import Data.Time.LocalTime
+import Data.Int
+import Data.Time.Clock.POSIX
+import Data.Time
 import GHC.RTS.Flags (MiscFlags(installSEHHandlers))
 import qualified Data.Maybe
 import qualified Data.ByteString.Lazy.Internal as BI
@@ -24,7 +27,7 @@ import qualified Data.ByteString.Lazy.Internal as BI
 data LoginResponse = LoginResponse
     { accessToken :: Text
     , tokenType :: Text
-    , expiresIn :: Integer
+    , expiresIn :: Int64
     , refreshToken :: Text
     } deriving (Show)
 
@@ -40,7 +43,7 @@ instance ToJSON LoginResponse where
 data Token = Token
     {
         user :: Text,
-        exp :: Integer
+        exp :: Int64
     } deriving (Show)
 
 instance ToJSON Token where
@@ -145,5 +148,14 @@ extractPassword :: Maybe Text -> Text
 extractPassword = Data.Maybe.fromMaybe ""
 
 
-convertToString :: Text -> [Char]
-convertToString u = BI.unpackChars (encode $ Token u 36000)
+nanosSinceEpoch :: NominalDiffTime -> Int64
+nanosSinceEpoch = floor  . nominalDiffTimeToSeconds
+
+secondsSinceEpoch :: NominalDiffTime -> Int64
+secondsSinceEpoch u = (nanosSinceEpoch u) 
+
+tokenExpiration :: NominalDiffTime -> Int64
+tokenExpiration u = (secondsSinceEpoch u) + 864000
+
+convertToString :: Text -> Int64 -> [Char]
+convertToString u t = BI.unpackChars (encode $ Token u t)
