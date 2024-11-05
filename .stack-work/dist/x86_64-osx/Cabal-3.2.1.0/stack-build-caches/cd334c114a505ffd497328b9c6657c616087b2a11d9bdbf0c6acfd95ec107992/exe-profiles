@@ -3,13 +3,13 @@
 /Users/mtirao/Development/haskell/wanaka_profiles/profiles.cabal:
   hash: 095c64a745423fefcb1d8aa128d85233f5ab0136bcc9b07e99b8801c128f1801
 /Users/mtirao/Development/haskell/wanaka_profiles/src/Domain.hs:
-  hash: c792b9aa0fd52e4fa3c00eb5469d66dc33ccac8778226d8d2906ab67b704020f
+  hash: 1ba12ebf3a0b5598631b3d6639ee8d582495826fa9368bcdbb4d5eba8967e609
 /Users/mtirao/Development/haskell/wanaka_profiles/src/Main.hs:
   hash: 5f6388bb97b0057afca7e02ea3efb6574d7269111c302ea575d7ff240552ed60
 /Users/mtirao/Development/haskell/wanaka_profiles/src/Views.hs:
   hash: 39ba511afda8c15073c945e1d4f89b896ae5d0c5fa1aa492b3e532d2e7e45e33
 /Users/mtirao/Development/haskell/wanaka_profiles/src/controller/ProfilesController.hs:
-  hash: 19d792f748be091dbe2dd849990b5c33104993f17ea6816843d7fc5eb7d8dd9b
+  hash: 478d940853ed7921a1a6cc7ab84baaf65a1f70e014c0b61e40f72a393ba5719f
 /Users/mtirao/Development/haskell/wanaka_profiles/src/db/Db.hs:
   hash: ad7434d63c4328d991cef52f3e3247bf3ab72972306230dc949cc4c38936ae9a
 /Users/mtirao/Development/haskell/wanaka_profiles/src/db/Profiles.hs:

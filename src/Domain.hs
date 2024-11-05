@@ -38,14 +38,14 @@ instance ToJSON LoginResponse where
             "refreshtoken" .= refreshToken
         ]                           
 
-data Token = Token
+data Payload = Payload
     {
         user :: Text,
         exp :: Int64
     } deriving (Show)
 
-instance ToJSON Token where
-    toJSON (Token user exp) = object
+instance ToJSON Payload where
+    toJSON (Payload user exp) = object
         [
             "user" .= user,
             "exp" .= exp
@@ -156,4 +156,4 @@ tokenExpiration :: NominalDiffTime -> Int64
 tokenExpiration u = (secondsSinceEpoch u) + 864000
 
 convertToString :: Text -> Int64 -> [Char]
-convertToString u t = BI.unpackChars (encode $ Token u t)
+convertToString u t = BI.unpackChars (encode $ Payload u t)

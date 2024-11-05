@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module ProfilesController where
 
-import Domain ( Profile (userPassword, userId), Login, getUserName, ErrorMessage (ErrorMessage), getPassword, extractPassword, convertToString, tokenExpiration, LoginResponse(LoginResponse), Token(Token))
+import Domain ( Profile (userPassword, userId), Login, getUserName, ErrorMessage (ErrorMessage), getPassword, extractPassword, convertToString, tokenExpiration, LoginResponse(LoginResponse), Payload(Payload))
 import Views ( jsonResponse )
 import Profiles ()
 import Db ( DbOperation(find, insert, update), findUserByLogin )
