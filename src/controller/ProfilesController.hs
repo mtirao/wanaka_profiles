@@ -36,7 +36,7 @@ import Jose.Jwt (Jwt(Jwt))
 
 
 ---CREATE
-createProfile :: Pool Connection -> ActionT TL.Text IO ()
+-- createProfile :: Pool Connection -> ActionT TL.Text IO ()
 createProfile pool = do
                         b <- body
                         profile <- return $ (decode b :: Maybe Profile)
@@ -44,7 +44,7 @@ createProfile pool = do
                             Nothing -> status status400
                             Just _ -> profileResponse pool profile
 
-profileResponse :: (DbOperation a, ToJSON a) => Pool Connection -> Maybe a -> ActionT TL.Text IO ()
+-- profileResponse :: (DbOperation a, ToJSON a) => Pool Connection -> Maybe a -> ActionT TL.Text IO ()
 profileResponse pool profile = do
                                 dbProfile <- liftIO $ insert pool profile
                                 case dbProfile of
@@ -55,7 +55,7 @@ profileResponse pool profile = do
                                                                         status status200
 
 ---UPDATE
-updateProfile :: Pool Connection -> TL.Text -> ActionT TL.Text IO ()
+-- updateProfile :: Pool Connection -> TL.Text -> ActionT TL.Text IO ()
 updateProfile pool id = do
                         b <- body
                         profile <- return $ (decode b :: Maybe Profile)
@@ -73,13 +73,13 @@ updateProfileResponse pool profile id  = do
                                                                                 status status200
 
 --- GET
-getProfile :: Pool Connection -> TL.Text -> ActionT TL.Text IO ()
+-- getProfile :: Pool Connection -> TL.Text -> ActionT TL.Text IO ()
 getProfile pool idd = do
                         adults <- liftIO $ (find pool idd :: IO (Maybe Profile))
                         jsonResponse adults
 
 --- AUTH
-userAuthenticate :: ActionM BL.ByteString -> Pool Connection -> ActionT TL.Text IO ()
+-- userAuthenticate :: ActionM BL.ByteString -> Pool Connection -> ActionT TL.Text IO ()
 userAuthenticate body pool =  do
         b <- body
         let login = (decode b :: Maybe Login)

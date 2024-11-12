@@ -3,11 +3,31 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/lock_files
 
-packages: []
+packages:
+- completed:
+    hackage: opaleye-0.10.4.0@sha256:a30614caddbf918540cafe465555944c272badceb6c5aac6ad11c9b6ee3558bc,6201
+    pantry-tree:
+      sha256: 01d5118442fd86811587a609c2143c21e6086f9157150c383e4aeefe553f3a18
+      size: 5782
+  original:
+    hackage: opaleye-0.10.4.0
+- completed:
+    hackage: rel8-1.5.0.0@sha256:88517d3d73ae50cfdc853e8219829452e2a812ee21401ea6aad1fccd85cfb635,6026
+    pantry-tree:
+      sha256: be21de624580a47dbb69dc5ed2ab73180e5ca2c7f1f751c2c4fdaf2d05b0706c
+      size: 10781
+  original:
+    hackage: rel8-1.5.0.0
+- completed:
+    hackage: product-profunctors-0.11.1.0@sha256:2c7029375c573cedb9a8cdc13cae54b0165886e18e2a18acb1dc9b5bd37a3e8b,2497
+    pantry-tree:
+      sha256: b3a25df29769043161afd7281348473cc66f4b9f195c08f301ee699c6ef0f2f5
+      size: 1538
+  original:
+    hackage: product-profunctors-0.11.1.0
 snapshots:
 - completed:
-    sha256: e76d109964d9335abb412e22139c5bce3078be290ac6d90b8ecea6cc009bb198
-    size: 590102
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/18/26.yaml
-  original:
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/18/26.yaml
+    sha256: 1e32b51d9082fdf6f3bd92accc9dfffd4ddaf406404427fb10bf76d2bc03cbbb
+    size: 720263
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/22/41.yaml
+  original: lts-22.41
