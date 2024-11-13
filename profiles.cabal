@@ -18,8 +18,10 @@ executable profiles
     hs-source-dirs: src
                     ,src/db
                     ,src/controller
+                    ,src/DTOs
+                    ,src/Helpers
     main-is:        Main.hs
-    ghc-options:    -threaded -O2 -rtsopts -with-rtsopts=-N -Wno-deprecations -Wno-unused-imports -Wno-all-missed-specialisation -Wno-type-equality-out-of-scope -Wno-type-equality-requires-operators
+    ghc-options:    -threaded -O2 -rtsopts -with-rtsopts=-N -Wno-deprecations -Wno-unused-imports -Wno-type-equality-out-of-scope -Wno-type-equality-requires-operators
     default-extensions:     
             DuplicateRecordFields
             DeriveAnyClass 
@@ -51,11 +53,14 @@ executable profiles
                     , warp
                     , bytestring-conversion
                     , jose-jwt
+                    , hasql
                     , rel8
     other-modules: 
-        Domain
+        ProfileDTO
+        , Hardcoded
+        , Tenant
         , Views
-        , Db
-        , Profiles
-        , ProfilesController
+        , Profile
+        , Auth
+        , ProfileController
         
