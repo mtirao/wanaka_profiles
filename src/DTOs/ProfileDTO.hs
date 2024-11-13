@@ -92,6 +92,27 @@ instance ToJSON ErrorMessage where
             "error" .= message
         ]
 
+-- Tenant
+data TenantDTO = TenantDTO 
+    { userName :: Text
+    , userPassword :: Text
+    , userRole :: Text
+    , userId :: Text
+    } deriving (Show)
+
+instance FromJSON TenantDTO where
+    parseJSON (Object v) = TenantDTO <$>
+        v .: "username" <*>
+        v .: "userpassword" <*>
+        v .: "userrole" <*>
+        v .: "userid"
+
+-- Getters
+getTenantName :: TenantDTO -> T.Text
+getTenantName a = T.pack (TL.unpack (userName a))
+
+getTenantPassword :: TenantDTO -> T.Text
+getTenantPassword a = T.pack (TL.unpack (userPassword a))
 
 -- Profile
 data ProfileDTO = ProfileDTO

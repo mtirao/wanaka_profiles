@@ -22,17 +22,9 @@ import Web.Scotty.Internal.Types (ActionT)
 import Control.Monad.IO.Class
 
 import Auth
-import Tenant(getConnection)
+import Connection
 import ProfileController
-
-
-authSettings :: AuthSettings
-authSettings = "My Realm" { authIsProtected = needsAuth }
-
-needsAuth :: Request -> IO Bool
-needsAuth req = return $ case pathInfo req of
-  "admin":_ -> True   -- all admin pages need authentication
-  _         -> False  -- everything else is public
+import TenantController
 
 main :: IO ()
 main = do
@@ -43,23 +35,15 @@ main = do
     scotty 3000 $ do 
         middleware $ staticPolicy (noDots >-> addBase "static") -- serve static files
         middleware logStdout
-        -- middleware $ basicAuth (\u p -> validatePassword pool (fromStrict u) (fromStrict p)) authSettings
         -- AUTH
         post   "/api/wanaka/accounts/login" $ userAuthenticate body connection
+        -- PROFILE
         get "/api/wanaka/profile/:id" $ do  
                                         idd <- param "id" :: ActionM TL.Text
                                         getProfile (TI.pack (TL.unpack idd)) connection
+        post "/api/wanaka/profile" $ createUser body connection
+
         -- PROFILES AUTH
-        -- post "/admin/wanaka/profile" $ createProfile pool
-        -- get "/admin/wanaka/profile/:id" $ do   -- Query over ProfileView, which includes Patient information
-        --                                idd <- param "id" :: ActionM TL.Text
-        --                                getProfile pool idd
         -- put "/admin/wanaka/profile/:id" $ do
-        --                                idd <- param "id" :: ActionM TL.Text
-        --                                updateProfile pool idd
-        
-        -- PROFILES API
-        -- post "/api/wanaka/profile" $ createProfile pool
-        -- put "/api/wanaka/profile/:id" $ do
         --                                idd <- param "id" :: ActionM TL.Text
         --                                updateProfile pool idd

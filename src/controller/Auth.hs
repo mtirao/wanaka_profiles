@@ -52,6 +52,7 @@ createToken u  t = case token of
                         payload = (BI.packChars $ convertToString u t)
                         token = hmacEncode HS256 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" payload
 
+
 -- Helpers
 nanosSinceEpoch :: NominalDiffTime -> Int64
 nanosSinceEpoch = floor  . nominalDiffTimeToSeconds

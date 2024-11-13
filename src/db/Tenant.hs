@@ -9,8 +9,9 @@
 {-# language StandaloneDeriving #-}
 {-# language TypeApplications #-}
 {-# language TypeFamilies #-}
+{-# language DisambiguateRecordFields #-}
 
-module Tenant (findTenant, getConnection) where
+module Tenant (findTenant, insertTenant) where
 
 import Control.Monad.IO.Class
 import Data.Int (Int32, Int64)
@@ -47,9 +48,6 @@ tenantSchema = TableSchema
         }
     }
 
-getConnection :: IO (Either ConnectionError Connection)
-getConnection = acquire $ settings Hardcoded.host  Hardcoded.portNumber Hardcoded.user Hardcoded.password Hardcoded.database
-
 findTenant :: Text -> Text -> Connection -> IO (Either QueryError [Text])
 findTenant userName password conn =  do 
                             let query = select $ do
@@ -57,3 +55,16 @@ findTenant userName password conn =  do
                                             where_ $ (p.userName ==. lit userName) &&. (p.userPassword ==. lit password)
                                             return p.userId
                             run (statement () query ) conn
+
+
+insertTenant :: Text -> Text -> Connection -> IO (Either QueryError [Text])
+insertTenant u p conn = do
+                                run (statement () (insert1 u p)) conn
+
+insert1 :: Text -> Text -> Statement () [Text]
+insert1 u p = insert $ Insert 
+            { into = tenantSchema
+            , rows = values [ Tenant (lit u) (lit p) "admin" (lit u) ]
+            , returning = Projection (.userId)
+            , onConflict = Abort
+            }
