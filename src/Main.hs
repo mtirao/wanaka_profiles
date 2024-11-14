@@ -37,11 +37,16 @@ main = do
         middleware logStdout
         -- AUTH
         post   "/api/wanaka/accounts/login" $ userAuthenticate body connection
+        post "/api/wanaka/accounts" $ createUser body connection
+        delete "/api/wanaka/accounts" $ deleteUser connection
+        patch "/api/wanaka/accounts" $ updateUserPassword body connection
+
         -- PROFILE
         get "/api/wanaka/profile/:id" $ do  
                                         idd <- param "id" :: ActionM TL.Text
                                         getProfile (TI.pack (TL.unpack idd)) connection
-        post "/api/wanaka/profile" $ createUser body connection
+        post "/api/wanaka/profile" $ createProfile body connection
+        delete "/api/wanaka/profile" $ deleteUserProfile connection
 
         -- PROFILES AUTH
         -- put "/admin/wanaka/profile/:id" $ do

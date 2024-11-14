@@ -11,7 +11,7 @@
 {-# language TypeFamilies #-}
 {-# language DisambiguateRecordFields #-}
 
-module Tenant (findTenant, insertTenant) where
+module Tenant (findTenant, insertTenant, deleteTenant, updatePassword) where
 
 import Control.Monad.IO.Class
 import Data.Int (Int32, Int64)
@@ -56,15 +56,42 @@ findTenant userName password conn =  do
                                             return p.userId
                             run (statement () query ) conn
 
+-- INSERT
+insertTenant :: Text -> Text -> Text -> Connection -> IO (Either QueryError [Text])
+insertTenant u p i conn = do
+                            run (statement () (insert1 u p i)) conn
 
-insertTenant :: Text -> Text -> Connection -> IO (Either QueryError [Text])
-insertTenant u p conn = do
-                                run (statement () (insert1 u p)) conn
-
-insert1 :: Text -> Text -> Statement () [Text]
-insert1 u p = insert $ Insert 
+insert1 :: Text -> Text -> Text -> Statement () [Text]
+insert1 u p i = insert $ Insert 
             { into = tenantSchema
-            , rows = values [ Tenant (lit u) (lit p) "admin" (lit u) ]
+            , rows = values [ Tenant (lit u) (lit p) "admin" (lit i) ]
             , returning = Projection (.userId)
             , onConflict = Abort
+            }
+
+-- DELETE
+deleteTenant :: Text -> Connection -> IO (Either QueryError [Text])
+deleteTenant u conn = do
+                        run (statement () (delete1 u )) conn
+
+delete1 :: Text -> Statement () [Text]
+delete1 u  = delete $ Delete
+            { from = tenantSchema
+            , using = pure ()
+            , deleteWhere = \t ui -> (ui.userId ==. lit u)
+            , returning = Projection (.userId)
+            }
+
+-- UPDATE
+updatePassword :: Text -> Text -> Connection -> IO (Either QueryError [Text])
+updatePassword u p conn = do
+                        run (statement () (update1 u p)) conn
+
+update1 :: Text -> Text -> Statement () [Text]
+update1 u p  = update $ Update
+            { target = tenantSchema
+            , from = pure ()
+            , set = \_ row -> Tenant row.userName (lit p) "admin" row.userId
+            , updateWhere = \t ui -> (ui.userId ==. lit u)
+            , returning = Projection (.userId)
             }

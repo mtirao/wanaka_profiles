@@ -28,7 +28,7 @@ import Data.Aeson
 
 import Jose.Jws
 import Jose.Jwa
-import Jose.Jwt (Jwt(Jwt))
+import Jose.Jwt (Jwt(Jwt), JwsHeader(JwsHeader))
 
 --- AUTH
 userAuthenticate body conn =  do
@@ -52,6 +52,11 @@ createToken u  t = case token of
                         payload = (BI.packChars $ convertToString u t)
                         token = hmacEncode HS256 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" payload
 
+decodeToken t = case token of 
+                    Left _ -> Nothing
+                    Right (_, jwt) -> convertToPayload jwt
+                where 
+                    token = hmacDecode "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" $ tokenFromHeader t
 
 -- Helpers
 nanosSinceEpoch :: NominalDiffTime -> Int64
@@ -63,5 +68,14 @@ secondsSinceEpoch u = (nanosSinceEpoch u)
 tokenExpiration :: NominalDiffTime -> Int64
 tokenExpiration u = (secondsSinceEpoch u) + 864000
 
+toInt64 :: NominalDiffTime -> Int64
+toInt64 u = secondsSinceEpoch u
+
 convertToString :: Text -> Int64 -> [Char]
 convertToString u t = BL.unpackChars (encode $ Payload u t)                 
+
+convertToPayload :: BI.ByteString -> Maybe Payload
+convertToPayload t = ( decode $  BL.packChars $ BI.unpackChars t ) :: Maybe Payload
+
+tokenFromHeader :: (Text, Text) -> BI.ByteString
+tokenFromHeader (typ, token) = BL.toStrict $ TL.encodeUtf8 token 

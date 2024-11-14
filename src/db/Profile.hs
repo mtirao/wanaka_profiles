@@ -11,13 +11,13 @@
 {-# language TypeFamilies #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Profile (findProfile, toProfileDTO) where
+module Profile (findProfile, toProfileDTO, insertProfile, deleteProfile) where
 
 import Control.Monad.IO.Class
 import Data.Int (Int32, Int64)
-import Data.Text (Text, unpack)
-import qualified Data.Text.Internal.Lazy as TL
-import qualified Data.Text.Internal as TI
+import Data.Text (Text, unpack, pack)
+import qualified Data.Text.Lazy as TL
+--import qualified Data.Text.Internal as TI
 import Data.Time (LocalTime)
 import GHC.Generics (Generic)
 import Hasql.Connection (Connection, ConnectionError, acquire, release, settings)
@@ -62,6 +62,8 @@ profileSchema = TableSchema
         }
     }
 
+-- Functions
+-- GET
 findProfile userId conn = do 
                             let query = select $ do
                                             p <- each profileSchema
@@ -69,5 +71,36 @@ findProfile userId conn = do
                                             return p 
                             run (statement () query ) conn
 
+-- INSERT
+insertProfile :: ProfileDTO -> Connection -> IO (Either QueryError [Text])
+insertProfile p  conn = do
+                            run (statement () (insert1 p)) conn
+
+insert1 :: ProfileDTO -> Statement () [Text]
+insert1 p = insert $ Insert 
+            { into = profileSchema
+            , rows = values [ Profile (lit $ getCellPhone p) (lit $ getEmail p) (lit $ getFirstName p) (lit $ getLastName p) (lit $ getPhone p) (lit $ getGender p) (lit $ getAddress p) (lit $ getCity p) ""]
+            , returning = Projection (.userId)
+            , onConflict = Abort
+            }
+
+-- DELETE
+deleteProfile :: Text -> Connection -> IO (Either QueryError [Text])
+deleteProfile u conn = do
+                        run (statement () (delete1 u )) conn
+
+delete1 :: Text -> Statement () [Text]
+delete1 u  = delete $ Delete
+            { from = profileSchema
+            , using = pure ()
+            , deleteWhere = \t ui -> (ui.userId ==. lit u)
+            , returning = Projection (.userId)
+            }
+
+-- Helpers
 toProfileDTO :: Profile Result -> ProfileDTO
-toProfileDTO p = ProfileDTO p.cellPhone p.email p.firstName p.lastName p.phone p.gender p.address p.city
+toProfileDTO p = ProfileDTO (convertText $ p.cellPhone) (convertText $ p.email) (convertText $ p.firstName) (convertText $ p.lastName) (convertText $ p.phone) (convertText $ p.gender) (convertText $ p.address)  (convertText $ p.city)
+
+convertText :: Text -> TL.Text
+convertText s = TL.fromStrict s
+

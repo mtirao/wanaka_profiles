@@ -69,6 +69,11 @@ getPassword a = case a of
                 Just (Login u p) -> T.pack (TL.unpack p)
 
 -- Authentication
+data PasswordDTO = PasswordDTO { password :: Text} deriving (Show)
+instance FromJSON PasswordDTO where 
+    parseJSON (Object v) = PasswordDTO <$>
+        v .: "password"
+
 data Payload = Payload
     {
         user :: Text,
@@ -81,6 +86,18 @@ instance ToJSON Payload where
             "user" .= user,
             "exp" .= exp
         ]                           
+
+instance FromJSON Payload where
+    parseJSON (Object v) = Payload <$>
+        v .: "user" <*>
+        v .: "exp"
+
+tokenExperitionTime :: Payload -> Int64
+tokenExperitionTime (Payload u e) = e
+
+tokenUserId :: Payload -> Text
+tokenUserId (Payload u e) = u
+
 
 --ErrorMessage
 data ErrorMessage = ErrorMessage Text
@@ -114,18 +131,45 @@ getTenantName a = T.pack (TL.unpack (userName a))
 getTenantPassword :: TenantDTO -> T.Text
 getTenantPassword a = T.pack (TL.unpack (userPassword a))
 
+getTenantId :: TenantDTO -> T.Text
+getTenantId a = T.pack (TL.unpack (userId a))
+
 -- Profile
 data ProfileDTO = ProfileDTO
-    { cellPhone :: TI.Text
-    , email :: TI.Text
-    , firstName :: TI.Text
-    , lastName :: TI.Text
-    , phone :: TI.Text
-    , gender :: TI.Text
-    , address :: TI.Text
-    , city :: TI.Text
+    { cellPhone :: Text
+    , email :: Text
+    , firstName :: Text
+    , lastName :: Text
+    , phone :: Text
+    , gender :: Text
+    , address :: Text
+    , city :: Text
     } deriving (Show)
 
+-- Getters
+getCellPhone :: ProfileDTO -> T.Text
+getCellPhone a = T.pack (TL.unpack (cellPhone a))
+
+getEmail :: ProfileDTO -> T.Text
+getEmail a = T.pack (TL.unpack (email a))
+
+getFirstName :: ProfileDTO -> T.Text
+getFirstName a = T.pack (TL.unpack (firstName a))
+
+getLastName :: ProfileDTO -> T.Text
+getLastName a = T.pack (TL.unpack (lastName a))
+
+getPhone :: ProfileDTO -> T.Text
+getPhone a = T.pack (TL.unpack (phone a))
+
+getGender :: ProfileDTO -> T.Text
+getGender a = T.pack (TL.unpack (gender a))
+
+getAddress :: ProfileDTO -> T.Text
+getAddress a = T.pack (TL.unpack (address a))
+
+getCity :: ProfileDTO -> T.Text
+getCity a = T.pack (TL.unpack (city a))
 
 instance ToJSON ProfileDTO where
     toJSON ProfileDTO {..} = object [
