@@ -47,8 +47,4 @@ main = do
                                         getProfile (TI.pack (TL.unpack idd)) connection
         post "/api/wanaka/profile" $ createProfile body connection
         delete "/api/wanaka/profile" $ deleteUserProfile connection
-
-        -- PROFILES AUTH
-        -- put "/admin/wanaka/profile/:id" $ do
-        --                                idd <- param "id" :: ActionM TL.Text
-        --                                updateProfile pool idd
+        post "/api/wanaka/profile" $ updateUserProfile body connection

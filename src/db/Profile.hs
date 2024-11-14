@@ -11,7 +11,7 @@
 {-# language TypeFamilies #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module Profile (findProfile, toProfileDTO, insertProfile, deleteProfile) where
+module Profile (findProfile, toProfileDTO, insertProfile, deleteProfile, updateProfile) where
 
 import Control.Monad.IO.Class
 import Data.Int (Int32, Int64)
@@ -94,6 +94,20 @@ delete1 u  = delete $ Delete
             { from = profileSchema
             , using = pure ()
             , deleteWhere = \t ui -> (ui.userId ==. lit u)
+            , returning = Projection (.userId)
+            }
+
+-- UPDATE
+updateProfile :: Text -> ProfileDTO -> Connection -> IO (Either QueryError [Text])
+updateProfile u p conn = do
+                        run (statement () (update1 u p)) conn
+
+update1 :: Text -> ProfileDTO -> Statement () [Text]
+update1 u p  = update $ Update
+            { target = profileSchema
+            , from = pure ()
+            , set = \_ row -> Profile (lit $ getCellPhone p) (lit $ getEmail p) (lit $ getFirstName p) (lit $ getLastName p) (lit $ getPhone p) (lit $ getGender p) (lit $ getAddress p) (lit $ getCity p) row.userId
+            , updateWhere = \t ui -> (ui.userId ==. lit u)
             , returning = Projection (.userId)
             }
 

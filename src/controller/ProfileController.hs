@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module ProfileController(getProfile, createProfile, deleteUserProfile) where
+module ProfileController(getProfile, createProfile, deleteUserProfile, updateUserProfile) where
 
 import ProfileDTO
 
@@ -111,6 +111,34 @@ deleteUserProfile conn =  do
                                                 else do
                                                         jsonResponse (ErrorMessage "Token expired")
                                                         status unauthorized401   
+
+updateUserProfile body conn =  do
+        curTime <- liftIO getPOSIXTime
+        h <- header "Authorization"
+        b <- body
+        let profile = (decode b :: Maybe ProfileDTO)
+        case h of
+                Nothing -> status unauthorized401
+                Just auth -> do
+                                let parse = T.breakOnEnd " " $ TL.toStrict auth 
+                                let token = (decodeToken $ convert parse) :: Maybe Payload
+                                case token of
+                                        Nothing -> do
+                                                jsonResponse (ErrorMessage "Invalid token payload")
+                                                status unauthorized401
+                                        Just authToken -> case profile of
+                                                Nothing -> status badRequest400
+                                                Just p ->
+                                                        if (tokenExperitionTime authToken) >= (toInt64 curTime) then do
+                                                                result <- liftIO $ updateProfile (convertSingle $ tokenUserId authToken) p conn
+                                                                case result of
+                                                                        Right [] -> do
+                                                                                jsonResponse (ErrorMessage "User not found")
+                                                                                status forbidden403
+                                                                        Right [a] -> status noContent204
+                                                        else do
+                                                                jsonResponse (ErrorMessage "Token expired")
+                                                                status unauthorized401   
 
 convert :: (T.Text, T.Text) ->  (TL.Text, TL.Text)
 convert (a, b) = (TL.fromStrict a, TL.fromStrict b)
