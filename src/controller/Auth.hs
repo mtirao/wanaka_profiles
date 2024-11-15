@@ -48,10 +48,7 @@ userAuthenticate body conn =  do
                                 token = createToken (TL.pack (T.unpack a)) expDate
                                 refreshToken = createRefreshToken (TL.pack (T.unpack a)) refresExpDate
 
-refreshUserToken = do
-                curTime <- liftIO getPOSIXTime
-                let expDate = tokenExpiration curTime
-                let refresExpDate = refreshTokenExp curTime
+refreshUserToken conn = do
                 h <- header "Authorization"
                 rh <- header "X-Refresh-Token"
                 case h of
@@ -61,27 +58,46 @@ refreshUserToken = do
                                         Nothing -> do
                                                 jsonResponse (ErrorMessage "Invalid token payload")
                                                 status unauthorized401
-                                        Just authToken -> 
-                                                if tokenExperitionTime authToken >= toInt64 curTime then
-                                                        case rh of 
-                                                                Nothing -> status unauthorized401
-                                                                Just refresh -> 
-                                                                        case parseRefreshToken refresh of
-                                                                                Nothing -> status unauthorized401
-                                                                                Just refreToken -> if tokenExperitionTime authToken >= toInt64 curTime then
-                                                                                                        jsonResponse (LoginResponse (createToken (tokenUserId authToken) expDate) "JWT" (createRefreshToken (tokenUserId authToken) refresExpDate) ) 
-                                                                                                   else do 
-                                                                                                        jsonResponse (ErrorMessage "Token expired")
-                                                                                                        status unauthorized401  
-                                                else do
-                                                        jsonResponse (ErrorMessage "Token expired")
-                                                        status unauthorized401  
+                                        Just authToken -> checkTokenAndUpdate authToken rh conn     
                                 where 
                                         parseToken tkn = (decodeToken $ breakOnEnd " " tkn ) :: Maybe Payload
                                         parseRefreshToken tkn = (decodeeRefreshToken $ breakOnEnd " " tkn ) :: Maybe Payload 
-                                     
-                                        
+
+
+-- Checker helpers
+checkTokenDBUpdate :: Either a1 [a2] -> Text -> Text -> ActionM ()
+checkTokenDBUpdate result token refToken =  case result of
+                                Right [] ->  status badRequest400
+                                Right [a] ->  jsonResponse $ LoginResponse token "JWT" refToken                       
+
+checkTokenAndUpdate authToken rh conn =  do
+                                curTime <- liftIO getPOSIXTime
+                                let expDate = tokenExpiration curTime
+                                let refresExpDate = refreshTokenExp curTime
+                                if tokenExperitionTime authToken >= toInt64 curTime then
+                                        case rh of 
+                                                Nothing -> status unauthorized401
+                                                Just refresh -> 
+                                                        case parseRefreshToken refresh of
+                                                                Nothing -> status unauthorized401
+                                                                Just refreToken -> if tokenExperitionTime authToken >= toInt64 curTime then do
+                                                                                        let token = createToken (tokenUserId authToken) expDate
+                                                                                        let refToken = createRefreshToken (tokenUserId authToken) refresExpDate
+                                                                                        result <- liftIO $ updateTokens (TL.toStrict $ tokenUserId authToken) (TL.toStrict token) (TL.toStrict refToken) conn
+                                                                                        checkTokenDBUpdate result token refToken 
+                                                                                        else do 
+                                                                                        jsonResponse $ ErrorMessage "Token expired"
+                                                                                        status unauthorized401  
+                                else do
+                                        jsonResponse (ErrorMessage "Token expired")
+                                        status unauthorized401  
+                                where 
+                                        parseToken tkn = (decodeToken $ breakOnEnd " " tkn ) :: Maybe Payload
+                                        parseRefreshToken tkn = (decodeeRefreshToken $ breakOnEnd " " tkn ) :: Maybe Payload 
+
+
 -- Token helpers
+createToken :: Text -> Int64 -> Text
 createToken u  t = case token of
                         Left _ -> ""
                         Right (Jwt jwt) -> TL.pack $ BI.unpackChars jwt
@@ -89,12 +105,14 @@ createToken u  t = case token of
                         payload = BI.packChars $ convertToString u t
                         token = hmacEncode HS256 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" payload
 
+decodeToken :: (Text, Text) -> Maybe Payload
 decodeToken t = case token of 
                     Left _ -> Nothing
                     Right (_, jwt) -> convertToPayload jwt
                 where 
                     token = hmacDecode "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" $ tokenFromHeader t
 
+createRefreshToken :: Text -> Int64 -> Text
 createRefreshToken u  t = case token of
                         Left _ -> ""
                         Right (Jwt jwt) -> TL.pack $ BI.unpackChars jwt
@@ -102,6 +120,7 @@ createRefreshToken u  t = case token of
                         payload = BI.packChars $ convertToString u t
                         token = hmacEncode HS256 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1N" payload
 
+decodeeRefreshToken :: (Text, Text) -> Maybe Payload
 decodeeRefreshToken t = case token of 
                     Left _ -> Nothing
                     Right (_, jwt) -> convertToPayload jwt

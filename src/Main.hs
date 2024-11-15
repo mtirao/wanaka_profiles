@@ -37,7 +37,7 @@ main = do
         middleware logStdout
         -- AUTH
         post   "/api/wanaka/accounts/login" $ userAuthenticate body connection
-        post   "/api/wanaka/accounts/refresh" refreshUserToken
+        post   "/api/wanaka/accounts/refresh" $ refreshUserToken connection
 
         post "/api/wanaka/accounts" $ createUser body connection
         delete "/api/wanaka/accounts" $ deleteUser connection

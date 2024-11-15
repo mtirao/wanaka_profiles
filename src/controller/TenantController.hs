@@ -50,8 +50,8 @@ createUser body conn =  do
                                         Just authToken -> case tenant of
                                                 Nothing -> status badRequest400
                                                 Just a -> 
-                                                        if (tokenExperitionTime authToken) >= (toInt64 curTime) then do
-                                                                result <- liftIO $ insertTenant (getTenantName a) (getTenantPassword a) (getTenantId a) conn
+                                                        if tokenExperitionTime authToken >= toInt64 curTime then do
+                                                                result <- liftIO $ insertTenant (getTenantName a) (getTenantPassword a) (getTenantId a) (toInt64 curTime) conn
                                                                 case result of
                                                                         Right [] -> do
                                                                                 jsonResponse (ErrorMessage "User not found")
@@ -74,8 +74,8 @@ deleteUser conn =  do
                                                 jsonResponse (ErrorMessage "Invalid token payload")
                                                 status unauthorized401
                                         Just authToken -> 
-                                                if (tokenExperitionTime authToken) >= (toInt64 curTime) then do
-                                                        result <- liftIO $ deleteTenant (convertSingle $ tokenUserId authToken) conn
+                                                if tokenExperitionTime authToken >= toInt64 curTime then do
+                                                        result <- liftIO $ deleteTenant (TL.toStrict  $ tokenUserId authToken) conn
                                                         case result of
                                                                 Right [] -> do
                                                                         jsonResponse (ErrorMessage "User not found")
@@ -102,8 +102,8 @@ updateUserPassword body conn =  do
                                         Just authToken -> case password of
                                                 Nothing -> status badRequest400
                                                 Just p -> 
-                                                        if (tokenExperitionTime authToken) >= (toInt64 curTime) then do
-                                                                result <- liftIO $ updatePassword (convertSingle $ tokenUserId authToken) (TL.toStrict $ p.password) conn
+                                                        if tokenExperitionTime authToken >= toInt64 curTime then do
+                                                                result <- liftIO $ updatePassword (TL.toStrict $ tokenUserId authToken) (TL.toStrict p.password) conn
                                                                 case result of
                                                                         Right [] -> do
                                                                                 jsonResponse (ErrorMessage "User not found")
@@ -116,6 +116,3 @@ updateUserPassword body conn =  do
 -- Helpers
 convert :: (T.Text, T.Text) -> (TL.Text, TL.Text)
 convert (a, b) = (TL.fromStrict a, TL.fromStrict b)
-
-convertSingle :: TL.Text -> T.Text
-convertSingle a = TL.toStrict a

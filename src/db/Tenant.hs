@@ -1,17 +1,13 @@
 {-# language BlockArguments #-}
 {-# language DeriveAnyClass #-}
 {-# language DeriveGeneric #-}
-{-# language DerivingStrategies #-}
 {-# language DerivingVia #-}
 {-# language DuplicateRecordFields #-}
-{-# language GeneralizedNewtypeDeriving #-}
 {-# language OverloadedStrings #-}
 {-# language StandaloneDeriving #-}
-{-# language TypeApplications #-}
 {-# language TypeFamilies #-}
-{-# language DisambiguateRecordFields #-}
 
-module Tenant (findTenant, insertTenant, deleteTenant, updatePassword) where
+module Tenant (findTenant, insertTenant, deleteTenant, updatePassword, updateTokens) where
 
 import Control.Monad.IO.Class
 import Data.Int (Int32, Int64)
@@ -31,6 +27,10 @@ data Tenant f = Tenant
     , userPassword :: Column f Text
     , userRole :: Column f Text
     , userId :: Column f Text
+    , authToken :: Column f Text
+    , createdAt :: Column f Int64
+    , refreshToken :: Column f Text
+    , status :: Column f Text
     }
     deriving (Generic, Rel8able)
 
@@ -45,6 +45,10 @@ tenantSchema = TableSchema
         , userPassword = "user_password"
         , userRole = "user_role"
         , userId = "user_id"
+        , authToken = "auth_token"
+        , createdAt = "created_at"
+        , refreshToken = "refresh_token"
+        , status = "status"
         }
     }
 
@@ -57,14 +61,14 @@ findTenant userName password conn =  do
                             run (statement () query ) conn
 
 -- INSERT
-insertTenant :: Text -> Text -> Text -> Connection -> IO (Either QueryError [Text])
-insertTenant u p i conn = do
-                            run (statement () (insert1 u p i)) conn
+insertTenant :: Text -> Text -> Text -> Int64-> Connection -> IO (Either QueryError [Text])
+insertTenant u p i c conn = do
+                            run (statement () (insert1 u p i c)) conn
 
-insert1 :: Text -> Text -> Text -> Statement () [Text]
-insert1 u p i = insert $ Insert 
+insert1 :: Text -> Text -> Text -> Int64 -> Statement () [Text]
+insert1 u p i c = insert $ Insert 
             { into = tenantSchema
-            , rows = values [ Tenant (lit u) (lit p) "admin" (lit i) ]
+            , rows = values [ Tenant (lit u) (lit p) "admin" (lit i) "" (lit c) "" "new" ]
             , returning = Projection (.userId)
             , onConflict = Abort
             }
@@ -78,7 +82,7 @@ delete1 :: Text -> Statement () [Text]
 delete1 u  = delete $ Delete
             { from = tenantSchema
             , using = pure ()
-            , deleteWhere = \t ui -> (ui.userId ==. lit u)
+            , deleteWhere = \t ui -> ui.userId ==. lit u
             , returning = Projection (.userId)
             }
 
@@ -87,11 +91,26 @@ updatePassword :: Text -> Text -> Connection -> IO (Either QueryError [Text])
 updatePassword u p conn = do
                         run (statement () (update1 u p)) conn
 
+updateTokens :: Text -> Text -> Text -> Connection -> IO (Either QueryError [Text])
+updateTokens u t rt conn = do
+                        run (statement () (update2 u t rt)) conn
+
+-- Update password
 update1 :: Text -> Text -> Statement () [Text]
 update1 u p  = update $ Update
             { target = tenantSchema
             , from = pure ()
-            , set = \_ row -> Tenant row.userName (lit p) "admin" row.userId
-            , updateWhere = \t ui -> (ui.userId ==. lit u)
+            , set = \_ row -> Tenant row.userName (lit p) "admin" row.userId row.authToken row.createdAt row.refreshToken row.status
+            , updateWhere = \t ui -> ui.userId ==. lit u
+            , returning = Projection (.userId)
+            }
+
+-- Update tokens
+update2 :: Text -> Text -> Text -> Statement () [Text]
+update2 u t rt  = update $ Update
+            { target = tenantSchema
+            , from = pure ()
+            , set = \_ row -> Tenant row.userName row.userPassword "admin" row.userId (lit t) row.createdAt (lit rt) row.status
+            , updateWhere = \t ui -> ui.userId ==. lit u
             , returning = Projection (.userId)
             }
