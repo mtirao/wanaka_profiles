@@ -47,7 +47,7 @@ getProfile userId conn =  do
                                         jsonResponse (ErrorMessage "Invalid token payload")
                                         status unauthorized401
                                 Just authToken -> 
-                                        if (tokenExperitionTime authToken) >= (toInt64 curTime) then 
+                                        if tokenExperitionTime authToken >= toInt64 curTime then 
                                                 case result of
                                                         Right [] -> do
                                                                 jsonResponse (ErrorMessage "User not found")
@@ -129,7 +129,7 @@ updateUserProfile body conn =  do
                                         Just authToken -> case profile of
                                                 Nothing -> status badRequest400
                                                 Just p ->
-                                                        if (tokenExperitionTime authToken) >= (toInt64 curTime) then do
+                                                        if tokenExperitionTime authToken >= toInt64 curTime then do
                                                                 result <- liftIO $ updateProfile (convertSingle $ tokenUserId authToken) p conn
                                                                 case result of
                                                                         Right [] -> do
@@ -144,4 +144,4 @@ convert :: (T.Text, T.Text) ->  (TL.Text, TL.Text)
 convert (a, b) = (TL.fromStrict a, TL.fromStrict b)
 
 convertSingle :: TL.Text -> T.Text
-convertSingle a = TL.toStrict a
+convertSingle  = TL.toStrict

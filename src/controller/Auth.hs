@@ -1,12 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Auth where
+module Auth(userAuthenticate, refreshUserToken, decodeToken, toInt64) where
 
 import ProfileDTO
 
 import Views ( jsonResponse )
 import Tenant 
 
-import Web.Scotty ( body, status, ActionM )
+import Web.Scotty ( body, header, status, ActionM )
 import Web.Scotty.Internal.Types (ActionT)
 import Web.Scotty.Trans (ScottyT, get, json)
 
@@ -36,20 +36,57 @@ userAuthenticate body conn =  do
         curTime <- liftIO getPOSIXTime
         let login = (decode b :: Maybe Login)
         let expDate = tokenExpiration curTime
+        let refresExpDate = refreshTokenExp curTime
         result <- liftIO $ findTenant (getUserName login) (getPassword login) conn
         case result of
                 Right [] -> do
                         jsonResponse (ErrorMessage "User not found")
                         status forbidden403
                 Right [a] ->
-                        jsonResponse (LoginResponse (createToken (TL.pack (T.unpack a)) expDate) "JWT" "refreshToken" )
+                        jsonResponse (LoginResponse token "JWT" refreshToken )
+                        where 
+                                token = createToken (TL.pack (T.unpack a)) expDate
+                                refreshToken = createRefreshToken (TL.pack (T.unpack a)) refresExpDate
 
-
+refreshUserToken = do
+                curTime <- liftIO getPOSIXTime
+                let expDate = tokenExpiration curTime
+                let refresExpDate = refreshTokenExp curTime
+                h <- header "Authorization"
+                rh <- header "X-Refresh-Token"
+                case h of
+                        Nothing -> status unauthorized401
+                        Just auth -> do
+                                case parseToken auth of
+                                        Nothing -> do
+                                                jsonResponse (ErrorMessage "Invalid token payload")
+                                                status unauthorized401
+                                        Just authToken -> 
+                                                if tokenExperitionTime authToken >= toInt64 curTime then
+                                                        case rh of 
+                                                                Nothing -> status unauthorized401
+                                                                Just refresh -> 
+                                                                        case parseRefreshToken refresh of
+                                                                                Nothing -> status unauthorized401
+                                                                                Just refreToken -> if tokenExperitionTime authToken >= toInt64 curTime then
+                                                                                                        jsonResponse (LoginResponse (createToken (tokenUserId authToken) expDate) "JWT" (createRefreshToken (tokenUserId authToken) refresExpDate) ) 
+                                                                                                   else do 
+                                                                                                        jsonResponse (ErrorMessage "Token expired")
+                                                                                                        status unauthorized401  
+                                                else do
+                                                        jsonResponse (ErrorMessage "Token expired")
+                                                        status unauthorized401  
+                                where 
+                                        parseToken tkn = (decodeToken $ breakOnEnd " " tkn ) :: Maybe Payload
+                                        parseRefreshToken tkn = (decodeeRefreshToken $ breakOnEnd " " tkn ) :: Maybe Payload 
+                                     
+                                        
+-- Token helpers
 createToken u  t = case token of
                         Left _ -> ""
                         Right (Jwt jwt) -> TL.pack $ BI.unpackChars jwt
                     where 
-                        payload = (BI.packChars $ convertToString u t)
+                        payload = BI.packChars $ convertToString u t
                         token = hmacEncode HS256 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" payload
 
 decodeToken t = case token of 
@@ -58,18 +95,35 @@ decodeToken t = case token of
                 where 
                     token = hmacDecode "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" $ tokenFromHeader t
 
+createRefreshToken u  t = case token of
+                        Left _ -> ""
+                        Right (Jwt jwt) -> TL.pack $ BI.unpackChars jwt
+                    where 
+                        payload = BI.packChars $ convertToString u t
+                        token = hmacEncode HS256 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1N" payload
+
+decodeeRefreshToken t = case token of 
+                    Left _ -> Nothing
+                    Right (_, jwt) -> convertToPayload jwt
+                where 
+                    token = hmacDecode "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1N" $ tokenFromHeader t
+
+
 -- Helpers
 nanosSinceEpoch :: NominalDiffTime -> Int64
 nanosSinceEpoch = floor  . nominalDiffTimeToSeconds
 
 secondsSinceEpoch :: NominalDiffTime -> Int64
-secondsSinceEpoch u = (nanosSinceEpoch u) 
+secondsSinceEpoch = nanosSinceEpoch
 
 tokenExpiration :: NominalDiffTime -> Int64
-tokenExpiration u = (secondsSinceEpoch u) + 864000
+tokenExpiration u = secondsSinceEpoch u + 864000
+
+refreshTokenExp :: NominalDiffTime -> Int64
+refreshTokenExp u = secondsSinceEpoch u + 864000 * 2
 
 toInt64 :: NominalDiffTime -> Int64
-toInt64 u = secondsSinceEpoch u
+toInt64 = secondsSinceEpoch
 
 convertToString :: Text -> Int64 -> [Char]
 convertToString u t = BL.unpackChars (encode $ Payload u t)                 
