@@ -49,17 +49,13 @@ createUser body conn =  do
                                                 status unauthorized401
                                         Just authToken -> case tenant of
                                                 Nothing -> status badRequest400
-                                                Just a -> 
-                                                        if tokenExperitionTime authToken >= toInt64 curTime then do
-                                                                result <- liftIO $ insertTenant (getTenantName a) (getTenantPassword a) (getTenantId a) (toInt64 curTime) conn
-                                                                case result of
-                                                                        Right [] -> do
-                                                                                jsonResponse (ErrorMessage "User not found")
-                                                                                status forbidden403
-                                                                        Right [a] -> status noContent204
-                                                        else do
-                                                                jsonResponse (ErrorMessage "Token expired")
-                                                                status unauthorized401   
+                                                Just a -> do
+                                                        result <- liftIO $ insertTenant (getTenantName a) (getTenantPassword a) (getTenantId a) (toInt64 curTime) conn
+                                                        case result of
+                                                                Right [] -> do
+                                                                        jsonResponse (ErrorMessage "User not found")
+                                                                        status forbidden403
+                                                                Right [b] -> status noContent204 
 
 deleteUser conn =  do
         curTime <- liftIO getPOSIXTime

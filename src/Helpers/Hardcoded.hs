@@ -12,7 +12,7 @@ portNumber :: (Integral i) => i
 portNumber = 5432
 
 database :: (IsString s) => s
-database = "smartlist_profiles"
+database = "wanaka_profiles"
 
 user :: (IsString s) => s
 user = "mtirao"

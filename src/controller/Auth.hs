@@ -80,14 +80,15 @@ checkTokenAndUpdate authToken rh conn =  do
                                                 Just refresh -> 
                                                         case parseRefreshToken refresh of
                                                                 Nothing -> status unauthorized401
-                                                                Just refreToken -> if tokenExperitionTime authToken >= toInt64 curTime then do
-                                                                                        let token = createToken (tokenUserId authToken) expDate
-                                                                                        let refToken = createRefreshToken (tokenUserId authToken) refresExpDate
-                                                                                        result <- liftIO $ updateTokens (TL.toStrict $ tokenUserId authToken) (TL.toStrict token) (TL.toStrict refToken) conn
-                                                                                        checkTokenDBUpdate result token refToken 
-                                                                                        else do 
-                                                                                        jsonResponse $ ErrorMessage "Token expired"
-                                                                                        status unauthorized401  
+                                                                Just refreToken -> 
+                                                                        if tokenExperitionTime authToken >= toInt64 curTime then do
+                                                                                let token = createToken (tokenUserId authToken) expDate
+                                                                                let refToken = createRefreshToken (tokenUserId authToken) refresExpDate
+                                                                                result <- liftIO $ updateTokens (TL.toStrict $ tokenUserId authToken) (TL.toStrict token) (TL.toStrict refToken) conn
+                                                                                checkTokenDBUpdate result token refToken 
+                                                                        else do 
+                                                                                jsonResponse $ ErrorMessage "Token expired"
+                                                                                status unauthorized401  
                                 else do
                                         jsonResponse (ErrorMessage "Token expired")
                                         status unauthorized401  
