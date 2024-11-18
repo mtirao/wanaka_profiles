@@ -1,11 +1,7 @@
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE QuasiQuotes       #-}
-{-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE RecordWildCards       #-}
 {-# OPTIONS_GHC -Wno-incomplete-patterns #-}
-{-# LANGUAGE InstanceSigs #-}
 
 
 module ProfileDTO where
@@ -69,7 +65,7 @@ getPassword a = case a of
                 Just (Login u p) -> T.pack (TL.unpack p)
 
 -- Authentication
-data PasswordDTO = PasswordDTO { password :: Text} deriving (Show)
+newtype PasswordDTO = PasswordDTO { password :: Text} deriving (Show)
 instance FromJSON PasswordDTO where 
     parseJSON (Object v) = PasswordDTO <$>
         v .: "password"
@@ -100,13 +96,22 @@ tokenUserId (Payload u e) = u
 
 
 --ErrorMessage
-data ErrorMessage = ErrorMessage Text
+newtype ErrorMessage = ErrorMessage Text
     deriving (Show)
 
 instance ToJSON ErrorMessage where
     toJSON (ErrorMessage message) = object
         [
             "error" .= message
+        ]
+
+newtype UserResponse = UserResponse Text
+    deriving (Show)
+
+instance ToJSON UserResponse where
+    toJSON (UserResponse message) = object
+        [
+            "user_id" .= message
         ]
 
 -- Tenant

@@ -81,7 +81,7 @@ validateUserToken conn = do
                                                                         jsonResponse (ErrorMessage "Invalid token payload")
                                                                         status unauthorized401
                                                                 Just payload -> if tokenExperitionTime payload  >= toInt64 curTime then do
-                                                                                        status noContent204
+                                                                                        jsonResponse $ UserResponse (tokenUserId payload)
                                                                                 else do 
                                                                                         jsonResponse $ ErrorMessage "Token expired"
                                                                                         status unauthorized401  
