@@ -7,7 +7,7 @@
 {-# language StandaloneDeriving #-}
 {-# language TypeFamilies #-}
 
-module Tenant (findTenant, insertTenant, deleteTenant, updatePassword, updateTokens) where
+module Tenant (findTenant, findTenantByToken, insertTenant, deleteTenant, updatePassword, updateTokens) where
 
 import Control.Monad.IO.Class
 import Data.Int (Int32, Int64)
@@ -59,6 +59,14 @@ findTenant userName password conn =  do
                                             where_ $ (p.userName ==. lit userName) &&. (p.userPassword ==. lit password)
                                             return p.userId
                             run (statement () query ) conn
+
+findTenantByToken :: Text -> Connection -> IO (Either QueryError [Text])
+findTenantByToken token conn =  do 
+                            let query = select $ do
+                                            p <- each tenantSchema
+                                            where_ $ p.authToken ==. lit token
+                                            return p.userId
+                            run (statement () query ) conn                      
 
 -- INSERT
 insertTenant :: Text -> Text -> Text -> Int64-> Connection -> IO (Either QueryError [Text])

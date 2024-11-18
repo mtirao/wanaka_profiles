@@ -36,8 +36,9 @@ main = do
         middleware $ staticPolicy (noDots >-> addBase "static") -- serve static files
         middleware logStdout
         -- AUTH
-        post   "/api/wanaka/accounts/login" $ userAuthenticate body connection
-        post   "/api/wanaka/accounts/refresh" $ refreshUserToken connection
+        post "/api/wanaka/accounts/login" $ userAuthenticate body connection
+        post "/api/wanaka/accounts/refresh" $ refreshUserToken connection
+        get "/api/wanaka/accounts/validate" $ validateUserToken connection
 
         post "/api/wanaka/accounts" $ createUser body connection
         delete "/api/wanaka/accounts" $ deleteUser connection

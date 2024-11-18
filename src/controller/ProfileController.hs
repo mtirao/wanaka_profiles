@@ -76,7 +76,7 @@ createProfile body conn =  do
                                 Just authToken -> case profile of
                                         Nothing -> status badRequest400
                                         Just a ->  
-                                                if (tokenExperitionTime authToken) >= (toInt64 curTime) then 
+                                                if tokenExperitionTime authToken >= toInt64 curTime then 
                                                          do
                                                                 result <- liftIO $ insertProfile a conn
                                                                 case result of
@@ -101,7 +101,7 @@ deleteUserProfile conn =  do
                                                 jsonResponse (ErrorMessage "Invalid token payload")
                                                 status unauthorized401
                                         Just authToken -> 
-                                                if (tokenExperitionTime authToken) >= (toInt64 curTime) then do
+                                                if tokenExperitionTime authToken >= toInt64 curTime then do
                                                         result <- liftIO $ deleteProfile (convertSingle $ tokenUserId authToken) conn
                                                         case result of
                                                                 Right [] -> do

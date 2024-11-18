@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Auth(userAuthenticate, refreshUserToken, decodeToken, toInt64) where
+module Auth(userAuthenticate, refreshUserToken, decodeToken, validateUserToken, toInt64) where
 
 import ProfileDTO
 
@@ -42,7 +42,8 @@ userAuthenticate body conn =  do
                 Right [] -> do
                         jsonResponse (ErrorMessage "User not found")
                         status forbidden403
-                Right [a] ->
+                Right [a] -> do
+                        rest <- liftIO $ updateTokens a (TL.toStrict token) (TL.toStrict refreshToken) conn
                         jsonResponse (LoginResponse token "JWT" refreshToken )
                         where 
                                 token = createToken (TL.pack (T.unpack a)) expDate
@@ -63,6 +64,27 @@ refreshUserToken conn = do
                                         parseToken tkn = (decodeToken $ breakOnEnd " " tkn ) :: Maybe Payload
                                         parseRefreshToken tkn = (decodeeRefreshToken $ breakOnEnd " " tkn ) :: Maybe Payload 
 
+
+validateUserToken conn = do
+                curTime <- liftIO getPOSIXTime
+                h <- header "Authorization"
+                case h of
+                        Nothing -> status unauthorized401
+                        Just auth -> do
+                                        let parse = T.breakOnEnd " " $ TL.toStrict auth
+                                        result <- liftIO $ findTenantByToken ( headerToToken parse ) conn
+                                        let token = (decodeToken $ convertToStrict parse ) :: Maybe Payload
+                                        case result of
+                                                Right [] -> status badRequest400
+                                                Right [a] -> case token of
+                                                                Nothing -> do
+                                                                        jsonResponse (ErrorMessage "Invalid token payload")
+                                                                        status unauthorized401
+                                                                Just payload -> if tokenExperitionTime payload  >= toInt64 curTime then do
+                                                                                        status noContent204
+                                                                                else do 
+                                                                                        jsonResponse $ ErrorMessage "Token expired"
+                                                                                        status unauthorized401  
 
 -- Checker helpers
 checkTokenDBUpdate :: Either a1 [a2] -> Text -> Text -> ActionM ()
@@ -128,6 +150,8 @@ decodeeRefreshToken t = case token of
                 where 
                     token = hmacDecode "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9eyJhbGciOiJIUzI1N" $ tokenFromHeader t
 
+headerToToken :: (T.Text, T.Text) -> T.Text
+headerToToken (typ, tkn) = tkn
 
 -- Helpers
 nanosSinceEpoch :: NominalDiffTime -> Int64
@@ -153,3 +177,6 @@ convertToPayload t = ( decode $  BL.packChars $ BI.unpackChars t ) :: Maybe Payl
 
 tokenFromHeader :: (Text, Text) -> BI.ByteString
 tokenFromHeader (typ, token) = BL.toStrict $ TL.encodeUtf8 token 
+
+convertToStrict :: (T.Text, T.Text) -> (Text, Text)
+convertToStrict (a, b) = (TL.fromStrict a, TL.fromStrict b)
