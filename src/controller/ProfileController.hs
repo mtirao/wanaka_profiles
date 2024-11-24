@@ -78,12 +78,12 @@ createProfile body conn =  do
                                         Just a ->  
                                                 if tokenExperitionTime authToken >= toInt64 curTime then 
                                                          do
-                                                                result <- liftIO $ insertProfile a conn
-                                                                case result of
-                                                                        Right [] -> do
-                                                                                jsonResponse (ErrorMessage "User not found")
-                                                                                status forbidden403
-                                                                        Right [a] -> status noContent204
+                                                            result <- liftIO $ insertProfile a conn
+                                                            case result of
+                                                                    Right [] -> do
+                                                                            jsonResponse (ErrorMessage "User not found")
+                                                                            status forbidden403
+                                                                    Right [a] -> status noContent204
                                                 else do
                                                         jsonResponse (ErrorMessage "Token expired")
                                                         status unauthorized401   

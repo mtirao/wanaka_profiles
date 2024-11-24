@@ -6,6 +6,8 @@ import ProfileDTO
 import Views ( jsonResponse )
 import Tenant 
 
+import Evaluator
+
 import Web.Scotty ( body, header, status, ActionM )
 import Web.Scotty.Internal.Types (ActionT)
 import Web.Scotty.Trans (ScottyT, get, json)
@@ -54,16 +56,9 @@ refreshUserToken conn = do
                 rh <- header "X-Refresh-Token"
                 case h of
                         Nothing -> status unauthorized401
-                        Just auth -> do
-                                case parseToken auth of
-                                        Nothing -> do
-                                                jsonResponse (ErrorMessage "Invalid token payload")
-                                                status unauthorized401
-                                        Just authToken -> checkTokenAndUpdate authToken rh conn     
-                                where 
-                                        parseToken tkn = (decodeToken $ breakOnEnd " " tkn ) :: Maybe Payload
-                                        parseRefreshToken tkn = (decodeeRefreshToken $ breakOnEnd " " tkn ) :: Maybe Payload 
-
+                        Just auth -> maybeEvaluation ((decodeToken $ breakOnEnd " " auth ) :: Maybe Payload) response
+                            where response value = checkTokenAndUpdate value rh conn 
+                                
 
 validateUserToken conn = do
                 curTime <- liftIO getPOSIXTime
@@ -94,23 +89,11 @@ checkTokenDBUpdate result token refToken =  case result of
 
 checkTokenAndUpdate authToken rh conn =  do
                                 curTime <- liftIO getPOSIXTime
-                                let expDate = tokenExpiration curTime
-                                let refresExpDate = refreshTokenExp curTime
                                 if tokenExperitionTime authToken >= toInt64 curTime then
                                         case rh of 
                                                 Nothing -> status unauthorized401
-                                                Just refresh -> 
-                                                        case parseRefreshToken refresh of
-                                                                Nothing -> status unauthorized401
-                                                                Just refreToken -> 
-                                                                        if tokenExperitionTime authToken >= toInt64 curTime then do
-                                                                                let token = createToken (tokenUserId authToken) expDate
-                                                                                let refToken = createRefreshToken (tokenUserId authToken) refresExpDate
-                                                                                result <- liftIO $ updateTokens (TL.toStrict $ tokenUserId authToken) (TL.toStrict token) (TL.toStrict refToken) conn
-                                                                                checkTokenDBUpdate result token refToken 
-                                                                        else do 
-                                                                                jsonResponse $ ErrorMessage "Token expired"
-                                                                                status unauthorized401  
+                                                Just refresh -> maybeEvaluation (parseRefreshToken refresh) response
+                                                    where response refreshToken =  validateRefreshToken refreshToken authToken curTime conn                              
                                 else do
                                         jsonResponse (ErrorMessage "Token expired")
                                         status unauthorized401  
@@ -120,6 +103,19 @@ checkTokenAndUpdate authToken rh conn =  do
 
 
 -- Token helpers
+validateRefreshToken refreshToken authToken curTime conn =  do
+                                                curTime <- liftIO getPOSIXTime
+                                                let expDate = tokenExpiration curTime
+                                                let refresExpDate = refreshTokenExp curTime
+                                                if tokenExperitionTime refreshToken >= toInt64 curTime then do
+                                                    let token = createToken (tokenUserId authToken) expDate
+                                                    let refToken = createRefreshToken (tokenUserId authToken) refresExpDate
+                                                    result <- liftIO $ updateTokens (TL.toStrict $ tokenUserId authToken) (TL.toStrict token) (TL.toStrict refToken) conn
+                                                    checkTokenDBUpdate result token refToken 
+                                                else do 
+                                                    jsonResponse $ ErrorMessage "Token expired"
+                                                    status unauthorized401  
+
 createToken :: Text -> Int64 -> Text
 createToken u  t = case token of
                         Left _ -> ""

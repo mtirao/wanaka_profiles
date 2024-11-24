@@ -65,4 +65,5 @@ executable profiles
         , ProfileController
         , TenantController
         , Connection
+        , Evaluator
         
