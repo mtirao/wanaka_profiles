@@ -6,6 +6,8 @@ import ProfileDTO
 import Views ( jsonResponse )
 import Tenant
 
+import Evaluator
+
 import Web.Scotty ( body, header, status, ActionM )
 import Web.Scotty.Internal.Types (ActionT)
 import Web.Scotty.Trans (ScottyT, get, json)
@@ -40,9 +42,8 @@ createUser body conn =  do
         let tenant = (decode b :: Maybe TenantDTO)
         case h of
                 Nothing -> status unauthorized401
-                Just auth -> do
-                                let parse = T.breakOnEnd " " $ TL.toStrict auth 
-                                let token = (decodeToken $ convert parse) :: Maybe Payload
+                Just auth -> do 
+                                let token = decodeAuthHdr auth 
                                 case token of
                                         Nothing -> do
                                                 jsonResponse (ErrorMessage "Invalid token payload")
@@ -63,8 +64,7 @@ deleteUser conn =  do
         case h of
                 Nothing -> status unauthorized401
                 Just auth -> do
-                                let parse = T.breakOnEnd " " $ TL.toStrict auth 
-                                let token = (decodeToken $ convert parse) :: Maybe Payload
+                                let token = decodeAuthHdr auth
                                 case token of
                                         Nothing -> do
                                                 jsonResponse (ErrorMessage "Invalid token payload")
@@ -89,8 +89,7 @@ updateUserPassword body conn =  do
         case h of
                 Nothing -> status unauthorized401
                 Just auth -> do
-                                let parse = T.breakOnEnd " " $ TL.toStrict auth 
-                                let token = (decodeToken $ convert parse) :: Maybe Payload
+                                let token = decodeAuthHdr auth
                                 case token of
                                         Nothing -> do
                                                 jsonResponse (ErrorMessage "Invalid token payload")

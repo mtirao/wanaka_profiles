@@ -6,6 +6,8 @@ import ProfileDTO
 import Views ( jsonResponse )
 import Profile 
 
+import Evaluator
+
 import Web.Scotty ( body, header, status, ActionM )
 import Web.Scotty.Internal.Types (ActionT)
 import Web.Scotty.Trans (ScottyT, get, json)
@@ -40,8 +42,7 @@ getProfile userId conn =  do
         case h of
                 Nothing -> status unauthorized401
                 Just auth -> do
-                        let parse = T.breakOnEnd " " $ TL.toStrict auth 
-                        let token = (decodeToken $ convert parse) :: Maybe Payload
+                        let token =  decodeAuthHdr auth
                         case token of
                                 Nothing -> do
                                         jsonResponse (ErrorMessage "Invalid token payload")
@@ -67,8 +68,7 @@ createProfile body conn =  do
         case h of
                 Nothing -> status unauthorized401
                 Just auth -> do
-                        let parse = T.breakOnEnd " " $ TL.toStrict auth
-                        let token = (decodeToken $ convert parse) :: Maybe Payload
+                        let token = decodeAuthHdr auth
                         case token of
                                 Nothing -> do
                                         jsonResponse (ErrorMessage "Invalid token payload")
@@ -93,9 +93,8 @@ deleteUserProfile conn =  do
         h <- header "Authorization"
         case h of
                 Nothing -> status unauthorized401
-                Just auth -> do
-                                let parse = T.breakOnEnd " " $ TL.toStrict auth 
-                                let token = (decodeToken $ convert parse) :: Maybe Payload
+                Just auth -> do 
+                                let token = decodeAuthHdr auth
                                 case token of
                                         Nothing -> do
                                                 jsonResponse (ErrorMessage "Invalid token payload")
@@ -120,8 +119,7 @@ updateUserProfile body conn =  do
         case h of
                 Nothing -> status unauthorized401
                 Just auth -> do
-                                let parse = T.breakOnEnd " " $ TL.toStrict auth 
-                                let token = (decodeToken $ convert parse) :: Maybe Payload
+                                let token = decodeAuthHdr auth
                                 case token of
                                         Nothing -> do
                                                 jsonResponse (ErrorMessage "Invalid token payload")

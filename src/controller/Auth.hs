@@ -56,7 +56,7 @@ refreshUserToken conn = do
                 rh <- header "X-Refresh-Token"
                 case h of
                         Nothing -> status unauthorized401
-                        Just auth -> maybeEvaluation ((decodeToken $ breakOnEnd " " auth ) :: Maybe Payload) response
+                        Just auth -> liftMaybe (decodeAuthHdr auth) response
                             where response value = checkTokenAndUpdate value rh conn 
                                 
 
@@ -68,7 +68,7 @@ validateUserToken conn = do
                         Just auth -> do
                                         let parse = T.breakOnEnd " " $ TL.toStrict auth
                                         result <- liftIO $ findTenantByToken ( headerToToken parse ) conn
-                                        let token = (decodeToken $ convertToStrict parse ) :: Maybe Payload
+                                        let token = decodeAuthHdr auth
                                         case result of
                                                 Right [] -> status badRequest400
                                                 Right [a] -> case token of
@@ -92,13 +92,12 @@ checkTokenAndUpdate authToken rh conn =  do
                                 if tokenExperitionTime authToken >= toInt64 curTime then
                                         case rh of 
                                                 Nothing -> status unauthorized401
-                                                Just refresh -> maybeEvaluation (parseRefreshToken refresh) response
+                                                Just refresh -> liftMaybe (parseRefreshToken refresh) response
                                                     where response refreshToken =  validateRefreshToken refreshToken authToken curTime conn                              
                                 else do
                                         jsonResponse (ErrorMessage "Token expired")
                                         status unauthorized401  
                                 where 
-                                        parseToken tkn = (decodeToken $ breakOnEnd " " tkn ) :: Maybe Payload
                                         parseRefreshToken tkn = (decodeeRefreshToken $ breakOnEnd " " tkn ) :: Maybe Payload 
 
 
@@ -123,13 +122,6 @@ createToken u  t = case token of
                     where 
                         payload = BI.packChars $ convertToString u t
                         token = hmacEncode HS256 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" payload
-
-decodeToken :: (Text, Text) -> Maybe Payload
-decodeToken t = case token of 
-                    Left _ -> Nothing
-                    Right (_, jwt) -> convertToPayload jwt
-                where 
-                    token = hmacDecode "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" $ tokenFromHeader t
 
 createRefreshToken :: Text -> Int64 -> Text
 createRefreshToken u  t = case token of
@@ -167,12 +159,6 @@ toInt64 = secondsSinceEpoch
 
 convertToString :: Text -> Int64 -> [Char]
 convertToString u t = BL.unpackChars (encode $ Payload u t)                 
-
-convertToPayload :: BI.ByteString -> Maybe Payload
-convertToPayload t = ( decode $  BL.packChars $ BI.unpackChars t ) :: Maybe Payload
-
-tokenFromHeader :: (Text, Text) -> BI.ByteString
-tokenFromHeader (typ, token) = BL.toStrict $ TL.encodeUtf8 token 
 
 convertToStrict :: (T.Text, T.Text) -> (Text, Text)
 convertToStrict (a, b) = (TL.fromStrict a, TL.fromStrict b)
