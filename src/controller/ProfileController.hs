@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+
 module ProfileController(getProfile, createProfile, deleteUserProfile, updateUserProfile) where
 
 import ProfileDTO
