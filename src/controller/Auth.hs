@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+
 module Auth(userAuthenticate, refreshUserToken, decodeToken, validateUserToken, toInt64) where
 
 import ProfileDTO
