@@ -51,7 +51,7 @@ createUser body conn =  do
                                         Just authToken -> case tenant of
                                                 Nothing -> status badRequest400
                                                 Just a -> do
-                                                        result <- liftIO $ insertTenant (getTenantName a) (getTenantPassword a) (getTenantId a) (toInt64 curTime) conn
+                                                        result <- liftIO $ insertTenant (getTenantName a) (getTenantPassword a) (getTenantRole a) (getTenantId a) (toInt64 curTime) conn
                                                         case result of
                                                                 Right [] -> do
                                                                         jsonResponse (ErrorMessage "User not found")

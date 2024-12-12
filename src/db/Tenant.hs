@@ -69,14 +69,14 @@ findTenantByToken token conn =  do
                             run (statement () query ) conn                      
 
 -- INSERT
-insertTenant :: Text -> Text -> Text -> Int64-> Connection -> IO (Either QueryError [Text])
-insertTenant u p i c conn = do
-                            run (statement () (insert1 u p i c)) conn
+insertTenant :: Text -> Text -> Text -> Text -> Int64-> Connection -> IO (Either QueryError [Text])
+insertTenant u p r i c conn = do
+                            run (statement () (insert1 u p r i c)) conn
 
-insert1 :: Text -> Text -> Text -> Int64 -> Statement () [Text]
-insert1 u p i c = insert $ Insert 
+insert1 :: Text -> Text -> Text -> Text -> Int64 -> Statement () [Text]
+insert1 u p r i c = insert $ Insert 
             { into = tenantSchema
-            , rows = values [ Tenant (lit u) (lit p) "admin" (lit i) "" (lit c) "" "new" ]
+            , rows = values [ Tenant (lit u) (lit p) (lit r) (lit i) "" (lit c) "" "new" ]
             , returning = Projection (.userId)
             , onConflict = Abort
             }

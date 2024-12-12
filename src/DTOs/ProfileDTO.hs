@@ -139,6 +139,9 @@ getTenantPassword a = T.pack (TL.unpack (userPassword a))
 getTenantId :: TenantDTO -> T.Text
 getTenantId a = T.pack (TL.unpack (userId a))
 
+getTenantRole :: TenantDTO -> T.Text
+getTenantRole a = T.pack (TL.unpack (userRole a))
+
 -- Profile
 data ProfileDTO = ProfileDTO
     { cellPhone :: Text
