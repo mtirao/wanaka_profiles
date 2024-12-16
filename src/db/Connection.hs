@@ -1,13 +1,6 @@
 {-# language BlockArguments #-}
-{-# language DeriveAnyClass #-}
-{-# language DeriveGeneric #-}
-{-# language DerivingStrategies #-}
 {-# language DerivingVia #-}
 {-# language DuplicateRecordFields #-}
-{-# language GeneralizedNewtypeDeriving #-}
-{-# language OverloadedStrings #-}
-{-# language StandaloneDeriving #-}
-{-# language TypeApplications #-}
 {-# language TypeFamilies #-}
 
 module Connection (getConnection) where

@@ -18,8 +18,8 @@ executable profiles
     hs-source-dirs: src
                     ,src/db
                     ,src/controller
-                    ,src/DTOs
-                    ,src/Helpers
+                    ,src/dto
+                    ,src/helpers
     main-is:        Main.hs
     ghc-options:    -threaded -O2 -rtsopts -with-rtsopts=-N -Wno-deprecations -Wno-unused-imports -Wno-type-equality-out-of-scope -Wno-type-equality-requires-operators
     default-extensions:     
