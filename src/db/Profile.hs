@@ -64,6 +64,7 @@ profileSchema = TableSchema
 
 -- Functions
 -- GET
+findProfile :: Text -> Connection -> IO (Either QueryError [Profile Result])
 findProfile userId conn = do 
                             let query = select $ do
                                             p <- each profileSchema
