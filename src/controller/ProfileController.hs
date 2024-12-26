@@ -34,6 +34,8 @@ import Jose.Jwa
 import Jose.Jwt (Jwt(Jwt))
 
 import Auth(decodeToken, toInt64)
+import AuthDTO
+import ErrorMessage
 
 --- PROFILE
 getProfile userId conn =  do

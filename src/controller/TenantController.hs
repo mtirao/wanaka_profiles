@@ -33,6 +33,9 @@ import Jose.Jwa
 import Jose.Jwt (Jwt(Jwt))
 
 import Auth(decodeToken, toInt64)
+import AuthDTO
+import TenantDTO
+import ErrorMessage
 
 --- AUTH
 createUser body conn =  do

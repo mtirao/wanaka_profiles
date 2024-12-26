@@ -66,4 +66,7 @@ executable profiles
         , TenantController
         , Connection
         , Evaluator
+        , AuthDTO
+        , TenantDTO
+        , ErrorMessage
         

@@ -16,6 +16,8 @@ import Web.Scotty.Trans (ScottyT, get, json)
 import Network.HTTP.Types.Status
 import ProfileDTO
 import Views ( jsonResponse )
+import AuthDTO
+import ErrorMessage
 
 import Jose.Jws
 import Jose.Jwa
