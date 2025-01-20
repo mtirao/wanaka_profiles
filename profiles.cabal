@@ -27,7 +27,10 @@ executable profiles
       Tenant
       UserPermissions
       Auth
+      GroupController
+      PermissionsController
       ProfileController
+      ResourceMapController
       TenantController
       AuthDTO
       ErrorMessage

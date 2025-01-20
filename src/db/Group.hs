@@ -50,7 +50,7 @@ findGroup :: Text -> Connection -> IO (Either QueryError [Group Result])
 findGroup userId conn = do
                             let query = select $ do
                                             p <- each groupSchema
-                                            where_ $ (p.userId ==. lit userId)
+                                            where_  (p.userId ==. lit userId)
                                             return p
                             run (statement () query ) conn
 

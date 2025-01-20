@@ -26,5 +26,5 @@ instance ToJSON ResourceMapDTO where
     toJSON ResourceMapDTO {..} = object [
             "userid" .= resMapUserId,
             "groupid" .= resMapGroupId,
-            "respurce" .= resMapResource
+            "resource" .= resMapResource
         ]

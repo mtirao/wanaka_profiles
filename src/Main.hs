@@ -30,6 +30,9 @@ import Tenant
 import Connection
 import ProfileController
 import TenantController
+import GroupController
+import PermissionsController
+import ResourceMapController
 import Evaluator
 import AuthDTO (tokenExperitionTime)
 import Data.Text.Encoding (decodeUtf8)
@@ -105,7 +108,7 @@ main = do
         post "/api/wanaka/accounts/login" $ userAuthenticate connection
         get "/api/wanaka/accounts/validate" $ validateUserToken connection
 
-        -- ACCOUNTS
+        -- TENANT
         post "/api/wanaka/accounts" $ createUser body connection
         delete "/api/wanaka/accounts/:id" $ do  
                                         idd <- param "id" :: ActionM TL.Text
@@ -122,6 +125,33 @@ main = do
         delete "/api/wanaka/profile/:id" $ do  
                                         idd <- param "id" :: ActionM TL.Text
                                         deleteUserProfile (TI.pack (TL.unpack idd)) connection
-        post "/api/wanaka/profile" $ do  
+        put "/api/wanaka/profile/:id" $ do  
                                     idd <- param "id" :: ActionM TL.Text 
                                     updateUserProfile (TI.pack (TL.unpack idd)) body connection
+        
+        -- GROUP
+        post "/api/wanaka/group" $ createGroup body connection
+        get "/api/wanaka/group/:id" $ do
+                                    idd <- param "id" :: ActionM TL.Text
+                                    getGroup (TI.pack (TL.unpack idd)) connection
+        delete "/api/wanaka/group/:id" $ do
+                                    idd <- param "id" :: ActionM TL.Text
+                                    deleteUserGroup (TI.pack (TL.unpack idd)) connection
+        
+        -- USER PERMISSIONS
+        post "/api/wanaka/permission" $ createPermissions body connection
+        get "/api/wanaka/permission/" $ do
+                                    idd <- param "resource" :: ActionM TL.Text
+                                    getPermissions (TI.pack (TL.unpack idd)) connection
+        delete "/api/wanaka/permission/" $ do
+                                    idd <- param "resource" :: ActionM TL.Text
+                                    deletePermissions (TI.pack (TL.unpack idd)) connection
+
+        -- RESOURCE MAP
+        post "/api/wanaka/map" $ createMap body connection
+        get "/api/wanaka/map/" $ do
+                                    idd <- param "resource" :: ActionM TL.Text
+                                    getMap (TI.pack (TL.unpack idd)) connection
+        delete "/api/wanaka/map/" $ do
+                                    idd <- param "resource" :: ActionM TL.Text
+                                    deleteMap (TI.pack (TL.unpack idd)) connection

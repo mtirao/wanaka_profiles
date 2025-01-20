@@ -44,7 +44,7 @@ deriving stock instance f ~ Rel8.Result => Show (UserPermission f)
 
 userPermissionSchema :: TableSchema (UserPermission Name)
 userPermissionSchema = TableSchema
-    { name = "Permissions"
+    { name = "permissions"
     , schema = Nothing
     , columns = UserPermission
         { permGroupExec = "group_exec"
@@ -55,8 +55,8 @@ userPermissionSchema = TableSchema
         , permOtherWrite = "other_write"
         , permResource = "resource"
         , permUserExec = "user_exec"
-        , permUserRead = "user_exec"
-        , permUserWrite = "user_exec"
+        , permUserRead = "user_read"
+        , permUserWrite = "user_write"
         }
     }
 
@@ -66,7 +66,7 @@ findUserPermission :: Text -> Connection -> IO (Either QueryError [UserPermissio
 findUserPermission resource conn = do
                             let query = select $ do
                                             p <- each userPermissionSchema
-                                            where_ $ (p.permResource ==. lit resource)
+                                            where_  (p.permResource ==. lit resource)
                                             return p
                             run (statement () query ) conn
 
@@ -92,7 +92,7 @@ delete1 :: Text -> Statement () [Text]
 delete1 r  = delete $ Delete
             { from = userPermissionSchema
             , using = pure ()
-            , deleteWhere = \t ui -> (ui.permResource ==. lit r)
+            , deleteWhere = \t ui -> ui.permResource ==. lit r
             , returning = Projection (.permResource)
             }
 
@@ -106,7 +106,7 @@ update1 r p  = update $ Update
             { target = userPermissionSchema
             , from = pure ()
             , set = \_ row -> UserPermission (lit p.permGroupExec) (lit p.permGroupRead) (lit p.permGroupWrite) (lit p.permOtherExec) (lit p.permOtherRead) (lit p.permOtherWrite) (lit p.permResource) (lit p.permUserExec) (lit p.permUserRead) (lit p.permUserWrite)
-            , updateWhere = \t ui -> (ui.permResource ==. lit r)
+            , updateWhere = \t ui -> ui.permResource ==. lit r
             , returning = Projection (.permResource)
             }
 

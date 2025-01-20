@@ -22,7 +22,7 @@ instance FromJSON GroupsDTO where
 
 instance ToJSON GroupsDTO where
     toJSON GroupsDTO {..} = object [
-            "userid" .= groupId,
-            "groupid" .= groupUserId
+            "userid" .= groupUserId ,
+            "groupid" .= groupId
         ]
 
