@@ -1,15 +1,11 @@
 {-# language BlockArguments #-}
 {-# language DeriveAnyClass #-}
 {-# language DeriveGeneric #-}
-{-# language DerivingStrategies #-}
 {-# language DerivingVia #-}
 {-# language DuplicateRecordFields #-}
-{-# language GeneralizedNewtypeDeriving #-}
 {-# language OverloadedStrings #-}
 {-# language StandaloneDeriving #-}
-{-# language TypeApplications #-}
 {-# language TypeFamilies #-}
-{-# LANGUAGE RecordWildCards #-}
 
 module Profile (findProfile, toProfileDTO, insertProfile, deleteProfile, updateProfile) where
 
@@ -30,7 +26,7 @@ import Hardcoded
 import ProfileDTO
 
 -- Rel8 Schemma Definitions
-data Profile f = Profile 
+data Profile f = Profile
     {cellPhone :: Column f Text
     , email :: Column f Text
     , firstName :: Column f Text
@@ -40,7 +36,7 @@ data Profile f = Profile
     , address :: Column f Text
     , city :: Column f Text
     , userId :: Column f Text
-    } 
+    }
     deriving (Generic, Rel8able)
 
 deriving stock instance f ~ Rel8.Result => Show (Profile f)
@@ -65,11 +61,11 @@ profileSchema = TableSchema
 -- Functions
 -- GET
 findProfile :: Text -> Connection -> IO (Either QueryError [Profile Result])
-findProfile userId conn = do 
+findProfile userId conn = do
                             let query = select $ do
                                             p <- each profileSchema
                                             where_ $ (p.userId ==. lit userId)
-                                            return p 
+                                            return p
                             run (statement () query ) conn
 
 -- INSERT
@@ -78,7 +74,7 @@ insertProfile p  conn = do
                             run (statement () (insert1 p)) conn
 
 insert1 :: ProfileDTO -> Statement () [Text]
-insert1 p = insert $ Insert 
+insert1 p = insert $ Insert
             { into = profileSchema
             , rows = values [ Profile (lit $ getCellPhone p) (lit $ getEmail p) (lit $ getFirstName p) (lit $ getLastName p) (lit $ getPhone p) (lit $ getGender p) (lit $ getAddress p) (lit $ getCity p) ""]
             , returning = Projection (.userId)
@@ -114,8 +110,6 @@ update1 u p  = update $ Update
 
 -- Helpers
 toProfileDTO :: Profile Result -> ProfileDTO
-toProfileDTO p = ProfileDTO (convertText $ p.cellPhone) (convertText $ p.email) (convertText $ p.firstName) (convertText $ p.lastName) (convertText $ p.phone) (convertText $ p.gender) (convertText $ p.address)  (convertText $ p.city)
+toProfileDTO p = ProfileDTO (TL.fromStrict p.cellPhone) (TL.fromStrict p.email) (TL.fromStrict p.firstName) (TL.fromStrict p.lastName) (TL.fromStrict p.phone) (TL.fromStrict p.gender) (TL.fromStrict p.address)  (TL.fromStrict  p.city)
 
-convertText :: Text -> TL.Text
-convertText s = TL.fromStrict s
 

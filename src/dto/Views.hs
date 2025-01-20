@@ -1,5 +1,3 @@
-{-# LANGUAGE DeriveGeneric #-}
-
 module Views where
 
 import GHC.Generics()
@@ -13,4 +11,4 @@ import Web.Scotty.Internal.Types()
 
 
 jsonResponse :: ToJSON a => a -> ActionM ()
-jsonResponse e = WS.json e
+jsonResponse = WS.json

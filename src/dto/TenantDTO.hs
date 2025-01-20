@@ -36,16 +36,3 @@ instance FromJSON TenantDTO where
         v .: "userrole" <*>
         v .: "userid"
 
--- Getters
-getTenantName :: TenantDTO -> T.Text
-getTenantName a = T.pack (TL.unpack (userName a))
-
-getTenantPassword :: TenantDTO -> T.Text
-getTenantPassword a = T.pack (TL.unpack (userPassword a))
-
-getTenantId :: TenantDTO -> T.Text
-getTenantId a = T.pack (TL.unpack (userId a))
-
-getTenantRole :: TenantDTO -> T.Text
-getTenantRole a = T.pack (TL.unpack (userRole a))
-

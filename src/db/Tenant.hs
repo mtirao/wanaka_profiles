@@ -25,7 +25,6 @@ import Hardcoded
 data Tenant f = Tenant
     { userName :: Column f Text
     , userPassword :: Column f Text
-    , userRole :: Column f Text
     , userId :: Column f Text
     , authToken :: Column f Text
     , createdAt :: Column f Int64
@@ -43,7 +42,6 @@ tenantSchema = TableSchema
     , columns = Tenant
         { userName = "user_name"
         , userPassword = "user_password"
-        , userRole = "user_role"
         , userId = "user_id"
         , authToken = "auth_token"
         , createdAt = "created_at"
@@ -76,7 +74,7 @@ insertTenant u p r i c conn = do
 insert1 :: Text -> Text -> Text -> Text -> Int64 -> Statement () [Text]
 insert1 u p r i c = insert $ Insert 
             { into = tenantSchema
-            , rows = values [ Tenant (lit u) (lit p) (lit r) (lit i) "" (lit c) "" "new" ]
+            , rows = values [ Tenant (lit u) (lit p) (lit i) "" (lit c) "" "new" ]
             , returning = Projection (.userId)
             , onConflict = Abort
             }
@@ -108,7 +106,7 @@ update1 :: Text -> Text -> Statement () [Text]
 update1 u p  = update $ Update
             { target = tenantSchema
             , from = pure ()
-            , set = \_ row -> Tenant row.userName (lit p) "admin" row.userId row.authToken row.createdAt row.refreshToken row.status
+            , set = \_ row -> Tenant row.userName (lit p) row.userId row.authToken row.createdAt row.refreshToken row.status
             , updateWhere = \t ui -> ui.userId ==. lit u
             , returning = Projection (.userId)
             }
@@ -118,7 +116,7 @@ update2 :: Text -> Text -> Text -> Statement () [Text]
 update2 u t rt  = update $ Update
             { target = tenantSchema
             , from = pure ()
-            , set = \_ row -> Tenant row.userName row.userPassword "admin" row.userId (lit t) row.createdAt (lit rt) row.status
+            , set = \_ row -> Tenant row.userName row.userPassword row.userId (lit t) row.createdAt (lit rt) row.status
             , updateWhere = \t ui -> ui.userId ==. lit u
             , returning = Projection (.userId)
             }

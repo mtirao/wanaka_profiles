@@ -39,110 +39,47 @@ import ErrorMessage
 
 --- PROFILE
 getProfile userId conn =  do
-        curTime <- liftIO getPOSIXTime
-        h <- header "Authorization"
-        result <- liftIO $ findProfile userId conn
-        case h of
-                Nothing -> status unauthorized401
-                Just auth -> do
-                        let token =  decodeAuthHdr auth
-                        case token of
-                                Nothing -> do
-                                        jsonResponse (ErrorMessage "Invalid token payload")
-                                        status unauthorized401
-                                Just authToken -> 
-                                        if tokenExperitionTime authToken >= toInt64 curTime then 
-                                                case result of
-                                                        Right [] -> do
-                                                                jsonResponse (ErrorMessage "User not found")
-                                                                status forbidden403
-                                                        Right [a] ->
-                                                                jsonResponse $ toProfileDTO a
-                                        else do
-                                                jsonResponse (ErrorMessage "Token expired")
-                                                status unauthorized401                                                      
-
+                            result <- liftIO $ findProfile userId conn
+                            case result of
+                                    Right [] -> do
+                                            jsonResponse (ErrorMessage "User not found")
+                                            status forbidden403
+                                    Right [a] ->
+                                            jsonResponse $ toProfileDTO a
+                                                 
 
 createProfile body conn =  do
         b <- body
-        h <- header "Authorization"
-        curTime <- liftIO getPOSIXTime
-        let profile = (decode b :: Maybe ProfileDTO)
-        case h of
-                Nothing -> status unauthorized401
-                Just auth -> do
-                        let token = decodeAuthHdr auth
-                        case token of
-                                Nothing -> do
-                                        jsonResponse (ErrorMessage "Invalid token payload")
-                                        status unauthorized401
-                                Just authToken -> case profile of
-                                        Nothing -> status badRequest400
-                                        Just a ->  
-                                                if tokenExperitionTime authToken >= toInt64 curTime then 
-                                                         do
-                                                            result <- liftIO $ insertProfile a conn
-                                                            case result of
-                                                                    Right [] -> do
-                                                                            jsonResponse (ErrorMessage "User not found")
-                                                                            status forbidden403
-                                                                    Right [a] -> status noContent204
-                                                else do
-                                                        jsonResponse (ErrorMessage "Token expired")
-                                                        status unauthorized401   
+        let profile = (decode b :: Maybe ProfileDTO) 
+        case profile of
+                Nothing -> status badRequest400
+                Just a -> do                   
+                            result <- liftIO $ insertProfile a conn
+                            case result of
+                                    Right [] -> do
+                                            jsonResponse (ErrorMessage "User not found")
+                                            status forbidden403
+                                    Right [a] -> status noContent204
+                                                
 
-deleteUserProfile conn =  do
-        curTime <- liftIO getPOSIXTime
-        h <- header "Authorization"
-        case h of
-                Nothing -> status unauthorized401
-                Just auth -> do 
-                                let token = decodeAuthHdr auth
-                                case token of
-                                        Nothing -> do
-                                                jsonResponse (ErrorMessage "Invalid token payload")
-                                                status unauthorized401
-                                        Just authToken -> 
-                                                if tokenExperitionTime authToken >= toInt64 curTime then do
-                                                        result <- liftIO $ deleteProfile (convertSingle $ tokenUserId authToken) conn
-                                                        case result of
-                                                                Right [] -> do
-                                                                        jsonResponse (ErrorMessage "User not found")
-                                                                        status forbidden403
-                                                                Right [a] -> status noContent204
-                                                else do
-                                                        jsonResponse (ErrorMessage "Token expired")
-                                                        status unauthorized401   
+deleteUserProfile userId conn =  do
+                                    result <- liftIO $ deleteProfile userId conn
+                                    case result of
+                                            Right [] -> do
+                                                    jsonResponse (ErrorMessage "User not found")
+                                                    status forbidden403
+                                            Right [a] -> status noContent204
+                                                
 
-updateUserProfile body conn =  do
-        curTime <- liftIO getPOSIXTime
-        h <- header "Authorization"
+updateUserProfile userId body conn =  do
         b <- body
         let profile = (decode b :: Maybe ProfileDTO)
-        case h of
-                Nothing -> status unauthorized401
-                Just auth -> do
-                                let token = decodeAuthHdr auth
-                                case token of
-                                        Nothing -> do
-                                                jsonResponse (ErrorMessage "Invalid token payload")
-                                                status unauthorized401
-                                        Just authToken -> case profile of
-                                                Nothing -> status badRequest400
-                                                Just p ->
-                                                        if tokenExperitionTime authToken >= toInt64 curTime then do
-                                                                result <- liftIO $ updateProfile (convertSingle $ tokenUserId authToken) p conn
-                                                                case result of
-                                                                        Right [] -> do
-                                                                                jsonResponse (ErrorMessage "User not found")
-                                                                                status forbidden403
-                                                                        Right [a] -> status noContent204
-                                                        else do
-                                                                jsonResponse (ErrorMessage "Token expired")
-                                                                status unauthorized401   
-
-convert :: (T.Text, T.Text) ->  (TL.Text, TL.Text)
-convert (a, b) = (TL.fromStrict a, TL.fromStrict b)
-
-convertSingle :: TL.Text -> T.Text
-convertSingle  = TL.toStrict
+        case profile of
+            Nothing -> status badRequest400
+            Just p -> do
+                    result <- liftIO $ updateProfile userId p conn
+                    case result of
+                            Right [] -> do
+                                    jsonResponse (ErrorMessage "User not found")
+                                    status forbidden403
+                            Right [a] -> status noContent204

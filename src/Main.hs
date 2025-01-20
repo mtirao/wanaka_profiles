@@ -13,18 +13,82 @@ import Network.Wai.Handler.Warp (defaultSettings, setPort)
 import Network.Wai.Middleware.RequestLogger (logStdoutDev, logStdout)
 import Network.Wai.Middleware.Static
 import Network.HTTP.Types.Status
-import Network.Wai (Request, pathInfo)
+import Network.Wai 
 import Network.Wai.Middleware.HttpAuth
 
 import Web.Scotty
 import Web.Scotty.Internal.Types (ActionT)
 
-import Control.Monad.IO.Class
+import Data.Time
+import Data.Time.Clock.POSIX
 
+import Views
+import ErrorMessage
+import Control.Monad.IO.Class
 import Auth
+import Tenant
 import Connection
 import ProfileController
 import TenantController
+import Evaluator
+import AuthDTO (tokenExperitionTime)
+import Data.Text.Encoding (decodeUtf8)
+import Control.Arrow (ArrowApply(app))
+import qualified Data.Text.Encoding as T
+
+
+validateTokenAuthorization :: Middleware
+validateTokenAuthorization app req respond = do 
+                                    let path = rawPathInfo req
+                                    if path == "/api/wanaka/accounts/login" then do
+                                        app req respond
+                                    else do
+                                        let maybeAuthHeader = lookup "Authorization" (requestHeaders req)
+                                        print maybeAuthHeader
+                                        case maybeAuthHeader of
+                                            Just authHeader -> do
+                                                case extractBearerAuth authHeader of
+                                                    Just auth ->  do 
+                                                        Right connection <- getConnection
+                                                        result <- liftIO $ findTenantByToken (T.decodeUtf8 auth) connection
+                                                        print result
+                                                        case result of
+                                                            Right [] -> do
+                                                                respond $ responseLBS status401 [] "Unathorized"
+                                                            Right [a] -> do
+                                                                    app req respond
+                                                    Nothing -> respond $ responseLBS status401 [] "Unathorized"
+                                            Nothing -> respond $ responseLBS status401 [] "Unathorized"
+
+validateAuthorization :: Middleware
+validateAuthorization app req respond = do
+                                    let path = rawPathInfo req
+                                    if path == "/api/wanaka/accounts/login" then do
+                                        let maybeAuthHeader = lookup "Authorization" (requestHeaders req)
+                                        case maybeAuthHeader of
+                                            Just authHeader -> do
+                                                case extractBasicAuth authHeader of
+                                                    Just _ ->  app req respond
+                                                    Nothing -> respond $ responseLBS status401 [] "Unathorized"
+                                            Nothing -> respond $ responseLBS status401 [] "Unathorized"
+                                    else do 
+                                        let maybeAuthHeader = lookup "Authorization" (requestHeaders req)
+                                        case maybeAuthHeader of
+                                            Nothing -> respond $ responseLBS status401 [] "Unathorized"
+                                            Just authHeaader -> do
+                                                case extractBearerAuth authHeaader of
+                                                    Nothing -> respond $ responseLBS status401 [] "Unathorized"
+                                                    Just auth -> do
+                                                        let token =  decodeToken (TL.fromStrict $ T.decodeUtf8 auth)
+                                                        curTime <- liftIO getPOSIXTime
+                                                        print auth
+                                                        case token of
+                                                            Nothing -> do
+                                                                respond $ responseLBS status401 [] "Unathorized"
+                                                            Just authToken -> if tokenExperitionTime authToken >= toInt64 curTime then 
+                                                                                app req respond
+                                                                            else 
+                                                                                respond $ responseLBS status401 [] "Unathorized"
 
 main :: IO ()
 main = do
@@ -33,21 +97,31 @@ main = do
     -- pool <- createPool (getConnection) close 1 40 10
     Right connection <- getConnection
     scotty 3000 $ do 
+        middleware validateTokenAuthorization
+        middleware validateAuthorization
         middleware $ staticPolicy (noDots >-> addBase "static") -- serve static files
         middleware logStdout
         -- AUTH
-        post "/api/wanaka/accounts/login" $ userAuthenticate body connection
-        post "/api/wanaka/accounts/refresh" $ refreshUserToken connection
+        post "/api/wanaka/accounts/login" $ userAuthenticate connection
         get "/api/wanaka/accounts/validate" $ validateUserToken connection
 
+        -- ACCOUNTS
         post "/api/wanaka/accounts" $ createUser body connection
-        delete "/api/wanaka/accounts" $ deleteUser connection
-        patch "/api/wanaka/accounts" $ updateUserPassword body connection
+        delete "/api/wanaka/accounts/:id" $ do  
+                                        idd <- param "id" :: ActionM TL.Text
+                                        deleteUser (TI.pack (TL.unpack idd)) connection
+        patch "/api/wanaka/accounts/:id" $ do  
+                                        idd <- param "id" :: ActionM TL.Text
+                                        updateUserPassword (TI.pack (TL.unpack idd)) body connection
 
         -- PROFILE
         get "/api/wanaka/profile/:id" $ do  
                                         idd <- param "id" :: ActionM TL.Text
                                         getProfile (TI.pack (TL.unpack idd)) connection
         post "/api/wanaka/profile" $ createProfile body connection
-        delete "/api/wanaka/profile" $ deleteUserProfile connection
-        post "/api/wanaka/profile" $ updateUserProfile body connection
+        delete "/api/wanaka/profile/:id" $ do  
+                                        idd <- param "id" :: ActionM TL.Text
+                                        deleteUserProfile (TI.pack (TL.unpack idd)) connection
+        post "/api/wanaka/profile" $ do  
+                                    idd <- param "id" :: ActionM TL.Text 
+                                    updateUserProfile (TI.pack (TL.unpack idd)) body connection
