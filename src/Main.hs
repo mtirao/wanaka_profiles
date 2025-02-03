@@ -13,7 +13,7 @@ import Network.Wai.Handler.Warp (defaultSettings, setPort)
 import Network.Wai.Middleware.RequestLogger (logStdoutDev, logStdout)
 import Network.Wai.Middleware.Static
 import Network.HTTP.Types.Status
-import Network.Wai 
+import Network.Wai
 import Network.Wai.Middleware.HttpAuth
 
 import Web.Scotty
@@ -34,32 +34,37 @@ import GroupController
 import PermissionsController
 import ResourceMapController
 import Evaluator
+import ResourceMap
+import Group
 import AuthDTO (tokenExperitionTime)
 import Data.Text.Encoding (decodeUtf8)
 import Control.Arrow (ArrowApply(app))
 import qualified Data.Text.Encoding as T
+import Control.Monad.Trans.Accum (add)
+import Evaluator (exists)
 
 
+-- MIDLEWARES
 validateTokenAuthorization :: Middleware
-validateTokenAuthorization app req respond = do 
+validateTokenAuthorization app req respond = do
                                     let path = rawPathInfo req
                                     if path == "/api/wanaka/accounts/login" then do
                                         app req respond
                                     else do
                                         let maybeAuthHeader = lookup "Authorization" (requestHeaders req)
-                                        print maybeAuthHeader
                                         case maybeAuthHeader of
                                             Just authHeader -> do
                                                 case extractBearerAuth authHeader of
-                                                    Just auth ->  do 
+                                                    Just auth ->  do
                                                         Right connection <- getConnection
                                                         result <- liftIO $ findTenantByToken (T.decodeUtf8 auth) connection
-                                                        print result
                                                         case result of
                                                             Right [] -> do
                                                                 respond $ responseLBS status401 [] "Unathorized"
                                                             Right [a] -> do
-                                                                    app req respond
+                                                                    let newHeaders = ("X-User-Request", T.encodeUtf8 a) : requestHeaders req
+                                                                    let newReq = req { requestHeaders = newHeaders }
+                                                                    app newReq respond
                                                     Nothing -> respond $ responseLBS status401 [] "Unathorized"
                                             Nothing -> respond $ responseLBS status401 [] "Unathorized"
 
@@ -74,7 +79,7 @@ validateAuthorization app req respond = do
                                                     Just _ ->  app req respond
                                                     Nothing -> respond $ responseLBS status401 [] "Unathorized"
                                             Nothing -> respond $ responseLBS status401 [] "Unathorized"
-                                    else do 
+                                    else do
                                         let maybeAuthHeader = lookup "Authorization" (requestHeaders req)
                                         case maybeAuthHeader of
                                             Nothing -> respond $ responseLBS status401 [] "Unathorized"
@@ -84,14 +89,47 @@ validateAuthorization app req respond = do
                                                     Just auth -> do
                                                         let token =  decodeToken (TL.fromStrict $ T.decodeUtf8 auth)
                                                         curTime <- liftIO getPOSIXTime
-                                                        print auth
                                                         case token of
                                                             Nothing -> do
                                                                 respond $ responseLBS status401 [] "Unathorized"
-                                                            Just authToken -> if tokenExperitionTime authToken >= toInt64 curTime then 
+                                                            Just authToken -> if tokenExperitionTime authToken >= toInt64 curTime then
                                                                                 app req respond
-                                                                            else 
+                                                                            else
+                                                                                respond $ responseLBS status401 [] "Unathorized"                            
+
+validatePermission :: Middleware
+validatePermission app req respond = do
+                                    let path = rawPathInfo req
+                                    print path
+                                    if path == "/api/wanaka/accounts/login" then do
+                                        app req respond
+                                    else do
+                                        let maybeUserRequestHeader = lookup "X-User-Request" (requestHeaders req)
+                                        print maybeUserRequestHeader
+                                        case maybeUserRequestHeader of
+                                            Just userRequest -> do
+                                                print userRequest
+                                                Right connection <- getConnection
+                                                result <- liftIO $ findResourceMap (T.decodeUtf8 path) connection
+                                                case result of
+                                                    Left _ -> do
+                                                        respond $ responseLBS status401 [] "Unathorized"
+                                                    Right a -> do
+                                                                if T.decodeUtf8 userRequest `elem` map getResUserId a then do
+                                                                    app req respond
+                                                                else do
+                                                                    result <- liftIO $ findGroup (T.decodeUtf8 userRequest) connection
+                                                                    case result of
+                                                                        Left _ -> do
+                                                                            respond $ responseLBS status401 [] "Unathorized"
+                                                                        Right b -> do
+                                                                            if exists (map getGroupId b) (map getResGroupId a) then do
+                                                                                app req respond
+                                                                            else do
                                                                                 respond $ responseLBS status401 [] "Unathorized"
+                                                                app req respond
+                                            Nothing -> respond $ responseLBS status401 [] "Unathorized"
+
 
 main :: IO ()
 main = do
@@ -99,9 +137,10 @@ main = do
     --    config    = setPort 3443 defaultSettings
     -- pool <- createPool (getConnection) close 1 40 10
     Right connection <- getConnection
-    scotty 3000 $ do 
+    scotty 3000 $ do
         middleware validateTokenAuthorization
         middleware validateAuthorization
+        middleware validatePermission
         middleware $ staticPolicy (noDots >-> addBase "static") -- serve static files
         middleware logStdout
         -- AUTH
@@ -110,25 +149,25 @@ main = do
 
         -- TENANT
         post "/api/wanaka/accounts" $ createUser body connection
-        delete "/api/wanaka/accounts/:id" $ do  
+        delete "/api/wanaka/accounts/:id" $ do
                                         idd <- param "id" :: ActionM TL.Text
                                         deleteUser (TI.pack (TL.unpack idd)) connection
-        patch "/api/wanaka/accounts/:id" $ do  
+        patch "/api/wanaka/accounts/:id" $ do
                                         idd <- param "id" :: ActionM TL.Text
                                         updateUserPassword (TI.pack (TL.unpack idd)) body connection
 
         -- PROFILE
-        get "/api/wanaka/profile/:id" $ do  
+        get "/api/wanaka/profile/:id" $ do
                                         idd <- param "id" :: ActionM TL.Text
                                         getProfile (TI.pack (TL.unpack idd)) connection
         post "/api/wanaka/profile" $ createProfile body connection
-        delete "/api/wanaka/profile/:id" $ do  
+        delete "/api/wanaka/profile/:id" $ do
                                         idd <- param "id" :: ActionM TL.Text
                                         deleteUserProfile (TI.pack (TL.unpack idd)) connection
-        put "/api/wanaka/profile/:id" $ do  
-                                    idd <- param "id" :: ActionM TL.Text 
+        put "/api/wanaka/profile/:id" $ do
+                                    idd <- param "id" :: ActionM TL.Text
                                     updateUserProfile (TI.pack (TL.unpack idd)) body connection
-        
+
         -- GROUP
         post "/api/wanaka/group" $ createGroup body connection
         get "/api/wanaka/group/:id" $ do
@@ -137,7 +176,7 @@ main = do
         delete "/api/wanaka/group/:id" $ do
                                     idd <- param "id" :: ActionM TL.Text
                                     deleteUserGroup (TI.pack (TL.unpack idd)) connection
-        
+
         -- USER PERMISSIONS
         post "/api/wanaka/permission" $ createPermissions body connection
         get "/api/wanaka/permission/" $ do

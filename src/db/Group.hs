@@ -7,7 +7,7 @@
 {-# language StandaloneDeriving #-}
 {-# language TypeFamilies #-}
 
-module Group (findGroup, toGroupDTO, insertGroup, deleteGroup, updateGroup) where
+module Group (findGroup, toGroupDTO, insertGroup, deleteGroup, updateGroup, getGroupId) where
 
 import Control.Monad.IO.Class
 import Data.Int (Int32, Int64)
@@ -98,4 +98,5 @@ update1 u p  = update $ Update
 toGroupDTO :: Group Result -> GroupsDTO
 toGroupDTO p = GroupsDTO p.userId p.groupId
 
-
+getGroupId :: Group Result -> Text
+getGroupId p = p.groupId

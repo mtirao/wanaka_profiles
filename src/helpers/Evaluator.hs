@@ -2,6 +2,7 @@
 
 module Evaluator where
 
+import Control.Applicative
 import Data.Aeson
 
 import qualified Data.Text
@@ -45,3 +46,6 @@ decodeToken t = case token of
                 where
                     token = hmacDecode "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" $ tokenFromHeader t
                     tokenFromHeader t = BL.toStrict $ TL.encodeUtf8 t
+
+exists :: Eq a => [a] -> [a] -> Bool
+exists x y = any id $ (==) <$> x <*> y

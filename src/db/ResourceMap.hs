@@ -7,7 +7,13 @@
 {-# language StandaloneDeriving #-}
 {-# language TypeFamilies #-}
 
-module ResourceMap (findResourceMap, toResourceMapDTO, insertResourceMap, deleteResourceMap, updateResourceMap) where
+module ResourceMap (findResourceMap, 
+    toResourceMapDTO, 
+    insertResourceMap, 
+    deleteResourceMap, 
+    updateResourceMap, 
+    getResUserId,
+    getResGroupId ) where
 
 import Control.Monad.IO.Class
 import Data.Int (Int32, Int64)
@@ -24,6 +30,7 @@ import Prelude hiding (filter, null)
 import Hardcoded
 
 import ResourceMapDTO
+import Group (getGroupId)
 
 -- Rel8 Schemma Definitions
 data ResourceMap f = ResourceMap
@@ -49,10 +56,10 @@ resourceMapSchema = TableSchema
 -- Functions
 -- GET
 findResourceMap :: Text -> Connection -> IO (Either QueryError [ResourceMap Result])
-findResourceMap userId conn = do
+findResourceMap resource conn = do
                             let query = select $ do
                                             p <- each resourceMapSchema
-                                            where_ $ (p.resMapUserId ==. lit userId)
+                                            where_ $ p.resMapResource ==. lit resource
                                             return p
                             run (statement () query ) conn
 
@@ -100,4 +107,8 @@ update1 u p  = update $ Update
 toResourceMapDTO :: ResourceMap Result -> ResourceMapDTO
 toResourceMapDTO p = ResourceMapDTO p.resMapUserId  p.resMapGroupId  p.resMapResource
 
+getResUserId :: ResourceMap Result -> Text
+getResUserId p = p.resMapUserId
 
+getResGroupId :: ResourceMap Result -> Text
+getResGroupId p = p.resMapGroupId
