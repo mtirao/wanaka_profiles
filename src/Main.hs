@@ -15,9 +15,6 @@ import qualified Hasql.Decoders as D
 import qualified Hasql.Encoders as E
 
 import ProfileController
-import GroupController
-import ResourceMapController
-import PermissionsController
 
 -- MIDLEWARES
 
@@ -71,30 +68,3 @@ main = do
                     put "/api/wanaka/profile/:id" $ do
                                                 idd <- param "id" :: ActionM TL.Text
                                                 updateUserProfile (TI.pack (TL.unpack idd)) body pool
-
-                    -- GROUP
-                    post "/api/wanaka/group" $ createGroup body pool
-                    get "/api/wanaka/group/:id" $ do
-                                                idd <- param "id" :: ActionM TL.Text
-                                                getGroup (TI.pack (TL.unpack idd)) pool
-                    delete "/api/wanaka/group/:id" $ do
-                                                idd <- param "id" :: ActionM TL.Text
-                                                deleteUserGroup (TI.pack (TL.unpack idd)) pool
-
-                    -- USER PERMISSIONS
-                    post "/api/wanaka/permission" $ createPermissions body pool
-                    get "/api/wanaka/permission/" $ do
-                                                idd <- param "resource" :: ActionM TL.Text
-                                                getPermissions (TI.pack (TL.unpack idd)) pool
-                    delete "/api/wanaka/permission/" $ do
-                                                idd <- param "resource" :: ActionM TL.Text
-                                                deletePermissions (TI.pack (TL.unpack idd)) pool
-
-                    -- RESOURCE MAP
-                    post "/api/wanaka/map" $ createMap body pool
-                    get "/api/wanaka/map/" $ do
-                                                idd <- param "resource" :: ActionM TL.Text
-                                                getMap (TI.pack (TL.unpack idd)) pool
-                    delete "/api/wanaka/map/" $ do
-                                                idd <- param "resource" :: ActionM TL.Text
-                                                deleteMap (TI.pack (TL.unpack idd)) pool

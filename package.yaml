@@ -10,7 +10,6 @@ source-dirs:
 - src
 - src/db
 - src/controller
-- src/dto
 - src/helpers
 extra-source-files:
 - README.md
