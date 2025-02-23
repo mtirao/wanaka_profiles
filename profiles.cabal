@@ -20,28 +20,20 @@ extra-source-files:
 executable profiles
   main-is: Main.hs
   other-modules:
-      Connection
       Group
       Profile
       ResourceMap
-      Tenant
       UserPermissions
-      Auth
       GroupController
       PermissionsController
       ProfileController
       ResourceMapController
-      TenantController
-      AuthDTO
       ErrorMessage
       GroupsDTO
       ProfileDTO
       ResourceMapDTO
-      TenantDTO
       UserPermissionsDTO
       Views
-      Evaluator
-      Hardcoded
       Paths_profiles
   hs-source-dirs:
       src

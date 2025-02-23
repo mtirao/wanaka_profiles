@@ -21,7 +21,6 @@ import Hasql.Session (QueryError, run, statement)
 import Hasql.Statement (Statement (..))
 import Rel8
 import Prelude hiding (filter, null)
-import Hardcoded
 
 import ProfileDTO
 

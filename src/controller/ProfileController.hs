@@ -7,8 +7,6 @@ import ProfileDTO
 import Views ( jsonResponse )
 import Profile 
 
-import Evaluator
-
 import Web.Scotty ( body, header, status, ActionM )
 import Web.Scotty.Internal.Types (ActionT)
 import Web.Scotty.Trans (ScottyT, get, json)
@@ -29,12 +27,6 @@ import Network.HTTP.Types.Status
 
 import Data.Aeson
 
-import Jose.Jws
-import Jose.Jwa
-import Jose.Jwt (Jwt(Jwt))
-
-import Auth(decodeToken, toInt64)
-import AuthDTO
 import ErrorMessage
 
 --- PROFILE

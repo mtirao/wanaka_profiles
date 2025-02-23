@@ -1,196 +1,100 @@
 module Main where
 
+import Web.Scotty
+import Network.Wai.Middleware.RequestLogger (logStdoutDev, logStdout)
+import Data.Text (Text, unpack, pack)
+import Data.Text.Encoding (encodeUtf8)
 import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Internal as TI
-import Data.ByteString.Conversion.To
-import Data.ByteString.Internal
-import Data.ByteString.Lazy.Internal
-import Data.Pool(createPool)
-import Data.ByteString.Lazy (fromStrict)
+import qualified Data.Configurator as C
+import qualified Data.Configurator.Types as C
+--import Hasql.Pool (Pool, acquire, use, release)
+import qualified Hasql.Connection as S
+import Hasql.Session (Session)
+import qualified Hasql.Decoders as D
+import qualified Hasql.Encoders as E
 
-import Network.Wai.Handler.WarpTLS (runTLS, tlsSettings)
-import Network.Wai.Handler.Warp (defaultSettings, setPort)
-import Network.Wai.Middleware.RequestLogger (logStdoutDev, logStdout)
-import Network.Wai.Middleware.Static
-import Network.HTTP.Types.Status
-import Network.Wai
-import Network.Wai.Middleware.HttpAuth
-
-import Web.Scotty
-import Web.Scotty.Internal.Types (ActionT)
-
-import Data.Time
-import Data.Time.Clock.POSIX
-
-import Views
-import ErrorMessage
-import Control.Monad.IO.Class
-import Auth
-import Tenant
-import Connection
 import ProfileController
-import TenantController
 import GroupController
-import PermissionsController
 import ResourceMapController
-import Evaluator
-import ResourceMap
-import Group
-import AuthDTO (tokenExperitionTime)
-import Data.Text.Encoding (decodeUtf8)
-import Control.Arrow (ArrowApply(app))
-import qualified Data.Text.Encoding as T
-import Control.Monad.Trans.Accum (add)
-import Evaluator (exists)
-
+import PermissionsController
 
 -- MIDLEWARES
-validateTokenAuthorization :: Middleware
-validateTokenAuthorization app req respond = do
-                                    let path = rawPathInfo req
-                                    if path == "/api/wanaka/accounts/login" then do
-                                        app req respond
-                                    else do
-                                        let maybeAuthHeader = lookup "Authorization" (requestHeaders req)
-                                        case maybeAuthHeader of
-                                            Just authHeader -> do
-                                                case extractBearerAuth authHeader of
-                                                    Just auth ->  do
-                                                        Right connection <- getConnection
-                                                        result <- liftIO $ findTenantByToken (T.decodeUtf8 auth) connection
-                                                        case result of
-                                                            Right [] -> do
-                                                                respond $ responseLBS status401 [] "Unathorized"
-                                                            Right [a] -> do
-                                                                    let newHeaders = ("X-User-Request", T.encodeUtf8 a) : requestHeaders req
-                                                                    let newReq = req { requestHeaders = newHeaders }
-                                                                    app newReq respond
-                                                    Nothing -> respond $ responseLBS status401 [] "Unathorized"
-                                            Nothing -> respond $ responseLBS status401 [] "Unathorized"
 
-validateAuthorization :: Middleware
-validateAuthorization app req respond = do
-                                    let path = rawPathInfo req
-                                    if path == "/api/wanaka/accounts/login" then do
-                                        let maybeAuthHeader = lookup "Authorization" (requestHeaders req)
-                                        case maybeAuthHeader of
-                                            Just authHeader -> do
-                                                case extractBasicAuth authHeader of
-                                                    Just _ ->  app req respond
-                                                    Nothing -> respond $ responseLBS status401 [] "Unathorized"
-                                            Nothing -> respond $ responseLBS status401 [] "Unathorized"
-                                    else do
-                                        let maybeAuthHeader = lookup "Authorization" (requestHeaders req)
-                                        case maybeAuthHeader of
-                                            Nothing -> respond $ responseLBS status401 [] "Unathorized"
-                                            Just authHeaader -> do
-                                                case extractBearerAuth authHeaader of
-                                                    Nothing -> respond $ responseLBS status401 [] "Unathorized"
-                                                    Just auth -> do
-                                                        let token =  decodeToken (TL.fromStrict $ T.decodeUtf8 auth)
-                                                        curTime <- liftIO getPOSIXTime
-                                                        case token of
-                                                            Nothing -> do
-                                                                respond $ responseLBS status401 [] "Unathorized"
-                                                            Just authToken -> if tokenExperitionTime authToken >= toInt64 curTime then
-                                                                                app req respond
-                                                                            else
-                                                                                respond $ responseLBS status401 [] "Unathorized"                            
+data DbConfig = DbConfig
+    { dbName     :: String
+    , dbUser     :: String
+    , dbPassword :: String
+    , dbHost     :: String
+    , dbPort     :: Int
+    }
 
-validatePermission :: Middleware
-validatePermission app req respond = do
-                                    let path = rawPathInfo req
-                                    print path
-                                    if path == "/api/wanaka/accounts/login" then do
-                                        app req respond
-                                    else do
-                                        let maybeUserRequestHeader = lookup "X-User-Request" (requestHeaders req)
-                                        print maybeUserRequestHeader
-                                        case maybeUserRequestHeader of
-                                            Just userRequest -> do
-                                                print userRequest
-                                                Right connection <- getConnection
-                                                result <- liftIO $ findResourceMap (T.decodeUtf8 path) connection
-                                                case result of
-                                                    Left _ -> do
-                                                        respond $ responseLBS status401 [] "Unathorized"
-                                                    Right a -> do
-                                                                if T.decodeUtf8 userRequest `elem` map getResUserId a then do
-                                                                    app req respond
-                                                                else do
-                                                                    result <- liftIO $ findGroup (T.decodeUtf8 userRequest) connection
-                                                                    case result of
-                                                                        Left _ -> do
-                                                                            respond $ responseLBS status401 [] "Unathorized"
-                                                                        Right b -> do
-                                                                            if exists (map getGroupId b) (map getResGroupId a) then do
-                                                                                app req respond
-                                                                            else do
-                                                                                respond $ responseLBS status401 [] "Unathorized"
-                                                                app req respond
-                                            Nothing -> respond $ responseLBS status401 [] "Unathorized"
+makeDbConfig :: C.Config -> IO (Maybe DbConfig)
+makeDbConfig conf = do
+    dbConfname <- C.lookup conf "database.name" :: IO (Maybe String)
+    dbConfUser <- C.lookup conf "database.user" :: IO (Maybe String)
+    dbConfPassword <- C.lookup conf "database.password" :: IO (Maybe String)
+    dbConfHost <- C.lookup conf "database.host" :: IO (Maybe String)
+    dbConfPort <- C.lookup conf "database.port" :: IO (Maybe Int)
+    return $ DbConfig <$> dbConfname
+                      <*> dbConfUser
+                      <*> dbConfPassword
+                      <*> dbConfHost
+                      <*> dbConfPort
 
 
 main :: IO ()
 main = do
-    -- let tlsConfig = tlsSettings "secrets/tls/certificate.pem" "secrets/tls/key.pem"
-    --    config    = setPort 3443 defaultSettings
-    -- pool <- createPool (getConnection) close 1 40 10
-    Right connection <- getConnection
-    scotty 3000 $ do
-        middleware validateTokenAuthorization
-        middleware validateAuthorization
-        middleware validatePermission
-        middleware $ staticPolicy (noDots >-> addBase "static") -- serve static files
-        middleware logStdout
-        -- AUTH
-        post "/api/wanaka/accounts/login" $ userAuthenticate connection
-        get "/api/wanaka/accounts/validate" $ validateUserToken connection
+    loadedConf <- C.load [C.Required "application.conf"]
+    dbConf <- makeDbConfig loadedConf
+    case dbConf of
+        Nothing -> putStrLn "Error loading configuration"
+        Just conf -> do
+            let connSettings = S.settings (encodeUtf8 $ pack $ dbHost conf)
+                                        (fromIntegral $ dbPort conf)
+                                        (encodeUtf8 $ pack $ dbUser conf)
+                                        (encodeUtf8 $ pack $ dbPassword conf)
+                                        (encodeUtf8 $ pack $ dbName conf)
+            result <- S.acquire connSettings
+            case result of
+                Left err -> putStrLn $ "Error acquiring connection: " ++ show err
+                Right pool -> scotty 3002 $ do
+                    middleware logStdoutDev
+                    -- PROFILE
+                    get "/api/wanaka/profile/:id" $ do
+                                                    idd <- param "id" :: ActionM TL.Text
+                                                    getProfile (TI.pack (TL.unpack idd)) pool
+                    post "/api/wanaka/profile" $ createProfile body pool
+                    delete "/api/wanaka/profile/:id" $ do
+                                                    idd <- param "id" :: ActionM TL.Text
+                                                    deleteUserProfile (TI.pack (TL.unpack idd)) pool
+                    put "/api/wanaka/profile/:id" $ do
+                                                idd <- param "id" :: ActionM TL.Text
+                                                updateUserProfile (TI.pack (TL.unpack idd)) body pool
 
-        -- TENANT
-        post "/api/wanaka/accounts" $ createUser body connection
-        delete "/api/wanaka/accounts/:id" $ do
-                                        idd <- param "id" :: ActionM TL.Text
-                                        deleteUser (TI.pack (TL.unpack idd)) connection
-        patch "/api/wanaka/accounts/:id" $ do
-                                        idd <- param "id" :: ActionM TL.Text
-                                        updateUserPassword (TI.pack (TL.unpack idd)) body connection
+                    -- GROUP
+                    post "/api/wanaka/group" $ createGroup body pool
+                    get "/api/wanaka/group/:id" $ do
+                                                idd <- param "id" :: ActionM TL.Text
+                                                getGroup (TI.pack (TL.unpack idd)) pool
+                    delete "/api/wanaka/group/:id" $ do
+                                                idd <- param "id" :: ActionM TL.Text
+                                                deleteUserGroup (TI.pack (TL.unpack idd)) pool
 
-        -- PROFILE
-        get "/api/wanaka/profile/:id" $ do
-                                        idd <- param "id" :: ActionM TL.Text
-                                        getProfile (TI.pack (TL.unpack idd)) connection
-        post "/api/wanaka/profile" $ createProfile body connection
-        delete "/api/wanaka/profile/:id" $ do
-                                        idd <- param "id" :: ActionM TL.Text
-                                        deleteUserProfile (TI.pack (TL.unpack idd)) connection
-        put "/api/wanaka/profile/:id" $ do
-                                    idd <- param "id" :: ActionM TL.Text
-                                    updateUserProfile (TI.pack (TL.unpack idd)) body connection
+                    -- USER PERMISSIONS
+                    post "/api/wanaka/permission" $ createPermissions body pool
+                    get "/api/wanaka/permission/" $ do
+                                                idd <- param "resource" :: ActionM TL.Text
+                                                getPermissions (TI.pack (TL.unpack idd)) pool
+                    delete "/api/wanaka/permission/" $ do
+                                                idd <- param "resource" :: ActionM TL.Text
+                                                deletePermissions (TI.pack (TL.unpack idd)) pool
 
-        -- GROUP
-        post "/api/wanaka/group" $ createGroup body connection
-        get "/api/wanaka/group/:id" $ do
-                                    idd <- param "id" :: ActionM TL.Text
-                                    getGroup (TI.pack (TL.unpack idd)) connection
-        delete "/api/wanaka/group/:id" $ do
-                                    idd <- param "id" :: ActionM TL.Text
-                                    deleteUserGroup (TI.pack (TL.unpack idd)) connection
-
-        -- USER PERMISSIONS
-        post "/api/wanaka/permission" $ createPermissions body connection
-        get "/api/wanaka/permission/" $ do
-                                    idd <- param "resource" :: ActionM TL.Text
-                                    getPermissions (TI.pack (TL.unpack idd)) connection
-        delete "/api/wanaka/permission/" $ do
-                                    idd <- param "resource" :: ActionM TL.Text
-                                    deletePermissions (TI.pack (TL.unpack idd)) connection
-
-        -- RESOURCE MAP
-        post "/api/wanaka/map" $ createMap body connection
-        get "/api/wanaka/map/" $ do
-                                    idd <- param "resource" :: ActionM TL.Text
-                                    getMap (TI.pack (TL.unpack idd)) connection
-        delete "/api/wanaka/map/" $ do
-                                    idd <- param "resource" :: ActionM TL.Text
-                                    deleteMap (TI.pack (TL.unpack idd)) connection
+                    -- RESOURCE MAP
+                    post "/api/wanaka/map" $ createMap body pool
+                    get "/api/wanaka/map/" $ do
+                                                idd <- param "resource" :: ActionM TL.Text
+                                                getMap (TI.pack (TL.unpack idd)) pool
+                    delete "/api/wanaka/map/" $ do
+                                                idd <- param "resource" :: ActionM TL.Text
+                                                deleteMap (TI.pack (TL.unpack idd)) pool
