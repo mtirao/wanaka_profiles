@@ -11,6 +11,7 @@ source-dirs:
 - src/db
 - src/controller
 - src/helpers
+- src/dto
 extra-source-files:
 - README.md
 default-extensions:
