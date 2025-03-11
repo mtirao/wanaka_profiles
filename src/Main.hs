@@ -8,11 +8,10 @@ import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Internal as TI
 import qualified Data.Configurator as C
 import qualified Data.Configurator.Types as C
---import Hasql.Pool (Pool, acquire, use, release)
 import qualified Hasql.Connection as S
-import Hasql.Session (Session)
 import qualified Hasql.Decoders as D
 import qualified Hasql.Encoders as E
+import Data.Time.Clock
 
 import ProfileController
 
@@ -39,7 +38,6 @@ makeDbConfig conf = do
                       <*> dbConfHost
                       <*> dbConfPort
 
-
 main :: IO ()
 main = do
     loadedConf <- C.load [C.Required "application.conf"]
@@ -59,12 +57,12 @@ main = do
                     middleware logStdoutDev
                     -- PROFILE
                     get "/api/wanaka/profile/:id" $ do
-                                                    idd <- param "id" :: ActionM TL.Text
-                                                    getProfile (TI.pack (TL.unpack idd)) pool
+                        idd <- param "id" :: ActionM TL.Text
+                        getProfile (TI.pack (TL.unpack idd)) pool
                     post "/api/wanaka/profile" $ createProfile body pool
                     delete "/api/wanaka/profile/:id" $ do
-                                                    idd <- param "id" :: ActionM TL.Text
-                                                    deleteUserProfile (TI.pack (TL.unpack idd)) pool
+                        idd <- param "id" :: ActionM TL.Text
+                        deleteUserProfile (TI.pack (TL.unpack idd)) pool
                     put "/api/wanaka/profile/:id" $ do
-                                                idd <- param "id" :: ActionM TL.Text
-                                                updateUserProfile (TI.pack (TL.unpack idd)) body pool
+                        idd <- param "id" :: ActionM TL.Text
+                        updateUserProfile (TI.pack (TL.unpack idd)) body pool
